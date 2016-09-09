@@ -4,27 +4,27 @@ extern crate mio;
 extern crate slab;
 extern crate bincode;
 extern crate rustc_serialize;
+extern crate uuid;
 
 use mio::tcp::*;
+use mio::Ready;
 use slab::Slab;
 
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{encode, decode};
 use self::packet::*;
+use self::node::*;
 
 mod packet;
+mod node;
 
 const SERVER_TOKEN: mio::Token = mio::Token(0);
-
-pub struct Connection
-{
-    socket: TcpStream,
-}
 
 pub struct Parapet
 {
     pub listener: TcpListener,
-    pub connections: Slab<Connection>,
+    pub pending_connections: Slab<Connection>,
+    pub nodes: Slab<Node>,
 }
 
 impl Parapet
@@ -37,7 +37,8 @@ impl Parapet
         let listener = TcpListener::bind(&address)?;
         Ok(Parapet {
             listener: listener,
-            connections: Slab::with_capacity(1024),
+            pending_connections: Slab::with_capacity(1024),
+            nodes: Slab::with_capacity(1024),
         })
     }
 
@@ -63,11 +64,13 @@ impl Parapet
 
                         println!("accepted connection from {:?}", addr);
 
-                        self.connections.insert(Connection {
+                        self.pending_connections.insert(Connection {
                             socket: socket,
                         }).ok();
                     },
                     _token => {
+                        assert_eq!(event.kind().is_readable(), true);
+
                         return Ok(());
                     },
                 }

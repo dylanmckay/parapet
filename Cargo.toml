@@ -8,4 +8,5 @@ mio = "0.6"
 slab = "0.3.0"
 bincode = "0.6.0"
 rustc-serialize = "0.3.19"
+uuid = { version = "0.3.1", features = ["v4"] }
 
