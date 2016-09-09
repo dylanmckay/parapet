@@ -1,22 +1,25 @@
 #![feature(question_mark)]
+#![feature(associated_consts)]
+#![feature(custom_derive, plugin)]
+
+#![plugin(serde_macros)]
 
 extern crate mio;
 extern crate slab;
-extern crate bincode;
-extern crate rustc_serialize;
 extern crate uuid;
+extern crate byteorder;
+extern crate serde;
+extern crate serde_json;
 
 use mio::tcp::*;
-use mio::Ready;
 use slab::Slab;
 
-use bincode::SizeLimit;
-use bincode::rustc_serialize::{encode, decode};
-use self::packet::*;
-use self::node::*;
+pub use self::packet::*;
+pub use self::node::*;
 
-mod packet;
-mod node;
+pub mod packet;
+pub mod node;
+pub mod io;
 
 const SERVER_TOKEN: mio::Token = mio::Token(0);
 
@@ -66,6 +69,7 @@ impl Parapet
 
                         self.pending_connections.insert(Connection {
                             socket: socket,
+                            builder: io::Builder::new(),
                         }).ok();
                     },
                     _token => {
