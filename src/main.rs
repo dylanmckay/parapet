@@ -17,13 +17,16 @@ use slab::Slab;
 pub use self::packet::*;
 pub use self::node::*;
 pub use self::network::Network;
+pub use self::error::Error;
 
 pub mod packet;
 pub mod node;
 pub mod network;
+pub mod error;
 pub mod io;
 
 const SERVER_TOKEN: mio::Token = mio::Token(0);
+const SERVER_PORT: u16 = 53371;
 
 pub struct Parapet
 {
@@ -47,7 +50,7 @@ impl Parapet
         })
     }
 
-    pub fn run(&mut self) -> Result<(), std::io::Error> {
+    pub fn run(&mut self) -> Result<(), Error> {
         let poll = mio::Poll::new()?;
         poll.register(&self.listener, SERVER_TOKEN, mio::Ready::readable(),
             mio::PollOpt::edge())?;
@@ -129,7 +132,7 @@ impl Parapet
 }
 
 fn main() {
-    let mut parapet = Parapet::bind("127.0.0.1:45722").unwrap();
-    parapet.run().unwrap();
+    let mut parapet = Parapet::bind(("127.0.0.1", SERVER_PORT)).unwrap();
+    parapet.run().ok();
 }
 
