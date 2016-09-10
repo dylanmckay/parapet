@@ -7,7 +7,7 @@ authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
 mio = "0.6"
 slab = "0.3.0"
 rustc-serialize = "0.3.19"
-uuid = { version = "0.3.1", features = ["v4"] }
+uuid = { version = "0.3.1", features = ["v4", "serde"] }
 byteorder = "0.5.3"
 serde = "0.8"
 serde_json = "0.8"

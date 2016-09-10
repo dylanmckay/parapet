@@ -26,8 +26,8 @@ const SERVER_TOKEN: mio::Token = mio::Token(0);
 pub struct Parapet
 {
     pub listener: TcpListener,
-    pub pending_connections: Slab<Connection>,
-    pub nodes: Slab<Node>,
+    pub pending_connections: Slab<Connection, mio::Token>,
+    pub nodes: Slab<Node, mio::Token>,
 }
 
 impl Parapet
@@ -67,15 +67,39 @@ impl Parapet
 
                         println!("accepted connection from {:?}", addr);
 
-                        self.pending_connections.insert(Connection {
+                        let entry = self.pending_connections.vacant_entry().expect("ran out of connections");
+
+                        poll.register(&socket, entry.index(), mio::Ready::readable(),
+                            mio::PollOpt::edge())?;
+
+                        entry.insert(Connection {
                             socket: socket,
                             builder: io::Builder::new(),
-                        }).ok();
+                        });
                     },
-                    _token => {
+                    token => {
                         assert_eq!(event.kind().is_readable(), true);
 
-                        return Ok(());
+                        if let Some(mut pending_connection) = self.pending_connections.entry(token) {
+                            pending_connection.get_mut().process_incoming_data()?;
+
+                            if let Some(packet) = pending_connection.get_mut().take_packet()? {
+                                match packet {
+                                    Packet::Hello(ref hello) => {
+                                        let connection = pending_connection.remove();
+
+                                        self.nodes.insert(Node {
+                                            connection: Some(connection),
+                                            uuid: hello.uuid,
+                                        }).ok();
+                                    },
+                                }
+                            }
+                        } else if let Some(_node) = self.nodes.get_mut(token) {
+                            return Ok(());
+                        } else {
+                            unreachable!()
+                        }
                     },
                 }
             }

@@ -21,6 +21,15 @@ impl Connection
 
         Ok(())
     }
+
+    pub fn take_packet(&mut self) -> Result<Option<::Packet>, std::io::Error> {
+        if let Some(pkt) = self.builder.take_packet() {
+            let mut body = std::io::Cursor::new(pkt.payload);
+            Ok(Some(::Packet::read(&mut body).unwrap()))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 pub struct Node

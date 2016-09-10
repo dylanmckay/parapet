@@ -4,6 +4,7 @@ use io;
 
 use byteorder::{WriteBytesExt, ReadBytesExt};
 use serde_json;
+use uuid::Uuid;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Packet
@@ -30,7 +31,7 @@ pub trait PacketTrait
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Hello
 {
-    pub uuid: String,
+    pub uuid: Uuid,
     pub sibling_uuids: Vec<String>,
 }
 
