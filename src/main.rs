@@ -95,8 +95,21 @@ impl Parapet
                                     },
                                 }
                             }
-                        } else if let Some(_node) = self.nodes.get_mut(token) {
-                            return Ok(());
+                        } else if let Some(mut node) = self.nodes.entry(token) {
+                            node.get_mut().connection.as_mut().unwrap().process_incoming_data()?;
+
+                            if let Some(packet) = node.get_mut().connection.as_mut().unwrap().take_packet()? {
+                                match packet {
+                                    // Adding a new node to the network, but not directly connected
+                                    // to us.
+                                    Packet::Hello(ref hello) => {
+                                        self.nodes.insert(Node {
+                                            uuid: hello.uuid,
+                                            connection: None,
+                                        });
+                                    },
+                                }
+                            }
                         } else {
                             unreachable!()
                         }
