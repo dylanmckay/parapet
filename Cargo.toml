@@ -3,6 +3,10 @@ name = "parapet"
 version = "0.1.0"
 authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
 
+description = "Peer to peer build system"
+license = "MIT"
+repository = "https://github.com/dylanmckay/parapet"
+
 [dependencies]
 mio = "0.6"
 slab = "0.3.0"
