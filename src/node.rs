@@ -7,6 +7,7 @@ use std::io::prelude::*;
 
 pub struct Connection
 {
+    pub token: ::mio::Token,
     pub socket: TcpStream,
     pub builder: io::Builder,
 }

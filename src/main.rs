@@ -16,9 +16,11 @@ use slab::Slab;
 
 pub use self::packet::*;
 pub use self::node::*;
+pub use self::network::Network;
 
 pub mod packet;
 pub mod node;
+pub mod network;
 pub mod io;
 
 const SERVER_TOKEN: mio::Token = mio::Token(0);
@@ -27,7 +29,7 @@ pub struct Parapet
 {
     pub listener: TcpListener,
     pub pending_connections: Slab<Connection, mio::Token>,
-    pub nodes: Slab<Node, mio::Token>,
+    pub network: Network,
 }
 
 impl Parapet
@@ -41,7 +43,7 @@ impl Parapet
         Ok(Parapet {
             listener: listener,
             pending_connections: Slab::with_capacity(1024),
-            nodes: Slab::with_capacity(1024),
+            network: Network::new(),
         })
     }
 
@@ -58,6 +60,8 @@ impl Parapet
         loop {
             poll.poll(&mut events, None).unwrap();
 
+            let mut new_nodes = Vec::new();
+
             for event in events.iter() {
                 match event.token() {
                     SERVER_TOKEN => {
@@ -68,11 +72,13 @@ impl Parapet
                         println!("accepted connection from {:?}", addr);
 
                         let entry = self.pending_connections.vacant_entry().expect("ran out of connections");
+                        let token = entry.index();
 
-                        poll.register(&socket, entry.index(), mio::Ready::readable(),
+                        poll.register(&socket, token, mio::Ready::readable(),
                             mio::PollOpt::edge())?;
 
                         entry.insert(Connection {
+                            token: token,
                             socket: socket,
                             builder: io::Builder::new(),
                         });
@@ -88,22 +94,22 @@ impl Parapet
                                     Packet::Hello(ref hello) => {
                                         let connection = pending_connection.remove();
 
-                                        self.nodes.insert(Node {
+                                        self.network.insert(Node {
                                             connection: Some(connection),
                                             uuid: hello.uuid,
-                                        }).ok();
+                                        });
                                     },
                                 }
                             }
-                        } else if let Some(mut node) = self.nodes.entry(token) {
-                            node.get_mut().connection.as_mut().unwrap().process_incoming_data()?;
+                        } else if let Some(mut node) = self.network.lookup_token_mut(token) {
+                            node.connection.as_mut().unwrap().process_incoming_data()?;
 
-                            if let Some(packet) = node.get_mut().connection.as_mut().unwrap().take_packet()? {
+                            if let Some(packet) = node.connection.as_mut().unwrap().take_packet()? {
                                 match packet {
                                     // Adding a new node to the network, but not directly connected
                                     // to us.
                                     Packet::Hello(ref hello) => {
-                                        self.nodes.insert(Node {
+                                        new_nodes.push(Node {
                                             uuid: hello.uuid,
                                             connection: None,
                                         });
@@ -116,6 +122,8 @@ impl Parapet
                     },
                 }
             }
+
+            for node in new_nodes.drain(..) { self.network.insert(node); }
         }
     }
 }
