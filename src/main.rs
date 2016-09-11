@@ -26,6 +26,7 @@ pub mod node;
 pub mod network;
 pub mod error;
 pub mod io;
+pub mod protocol;
 
 const SERVER_TOKEN: mio::Token = mio::Token(0);
 const SERVER_PORT: u16 = 53371;
