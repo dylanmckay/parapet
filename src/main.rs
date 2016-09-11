@@ -1,6 +1,7 @@
 #![feature(question_mark)]
 #![feature(associated_consts)]
 #![feature(custom_derive, plugin)]
+#![feature(conservative_impl_trait)]
 
 #![plugin(serde_macros)]
 
@@ -10,6 +11,7 @@ extern crate uuid;
 extern crate byteorder;
 extern crate serde;
 extern crate serde_json;
+extern crate graphsearch;
 
 use mio::tcp::*;
 use slab::Slab;
@@ -101,6 +103,10 @@ impl Parapet
                                             connection: Some(connection),
                                             uuid: hello.uuid,
                                         });
+
+                                        for sibling in hello.sibling_uuids.iter() {
+                                            self.network.connect(hello.uuid, sibling.clone());
+                                        }
                                     },
                                 }
                             }

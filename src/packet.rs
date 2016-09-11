@@ -32,7 +32,7 @@ pub trait PacketTrait
 pub struct Hello
 {
     pub uuid: Uuid,
-    pub sibling_uuids: Vec<String>,
+    pub sibling_uuids: Vec<Uuid>,
 }
 
 impl PacketTrait for Hello

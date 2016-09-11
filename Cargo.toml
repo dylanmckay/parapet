@@ -15,4 +15,5 @@ byteorder = "0.5.3"
 serde = "0.8"
 serde_json = "0.8"
 serde_macros = "0.8"
+graphsearch = "0.6.0"
 
