@@ -4,6 +4,7 @@ pub mod composite;
 pub mod array;
 pub mod map;
 pub mod string;
+pub mod tuple;
 
 use protocol;
 
