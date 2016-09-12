@@ -10,13 +10,14 @@ extern crate graphsearch;
 #[macro_use]
 extern crate protocol as proto;
 
+pub use self::proto_connection::ProtoConnection;
 pub use self::connection::*;
 pub use self::network::{Network, Node, Edge};
 pub use self::error::Error;
 pub use self::protocol::Packet;
 pub use self::path::Path;
 
-pub mod server;
+pub mod proto_connection;
 pub mod connection;
 pub mod network;
 pub mod error;
@@ -65,7 +66,7 @@ pub enum State
         uuid: Uuid,
         listener: TcpListener,
 
-        pending_connections: Slab<server::ProtoConnection, mio::Token>,
+        pending_connections: Slab<ProtoConnection, mio::Token>,
 
         /// The network we are apart of.
         network: Network,
@@ -201,7 +202,7 @@ impl Parapet
                             self.poll.register(&socket, token, mio::Ready::readable(),
                                 mio::PollOpt::edge())?;
 
-                            entry.insert(server::ProtoConnection::new(Connection {
+                            entry.insert(ProtoConnection::new(Connection {
                                 token: token,
                                 protocol: proto::wire::stream::Connection::new(socket, proto::wire::middleware::pipeline::default()),
                             }));
