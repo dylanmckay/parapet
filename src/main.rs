@@ -19,6 +19,7 @@ pub use self::error::Error;
 pub use self::protocol::Packet;
 pub use self::path::Path;
 
+pub mod server;
 pub mod connection;
 pub mod network;
 pub mod error;
@@ -31,7 +32,7 @@ const SERVER_PORT: u16 = 53371;
 pub struct Parapet
 {
     pub listener: TcpListener,
-    pub pending_connections: Slab<Connection, mio::Token>,
+    pub pending_connections: Slab<server::ProtoConnection, mio::Token>,
     pub network: Network,
 }
 
@@ -80,10 +81,10 @@ impl Parapet
                         poll.register(&socket, token, mio::Ready::readable(),
                             mio::PollOpt::edge())?;
 
-                        entry.insert(Connection {
+                        entry.insert(server::ProtoConnection::new(Connection {
                             token: token,
                             protocol: proto::wire::stream::Connection::new(socket, proto::wire::middleware::pipeline::default()),
-                        });
+                        }));
                     },
                     token => {
                         assert_eq!(event.kind().is_readable(), true);
@@ -91,24 +92,26 @@ impl Parapet
                         if let Some(mut pending_connection) = self.pending_connections.entry(token) {
                             pending_connection.get_mut().process_incoming_data()?;
 
-                            if let Some(packet) = pending_connection.get_mut().receive_packet()? {
-                                match packet {
-                                    Packet::Hello(ref hello) => {
-                                        let connection = pending_connection.remove();
-
-                                        self.network.insert(Node {
-                                            connection: Some(connection),
-                                            uuid: hello.uuid,
-                                        });
-
-                                        for sibling in hello.sibling_uuids.iter() {
-                                            self.network.connect(hello.uuid, sibling.clone());
-                                        }
-                                    },
-                                    Packet::Ping(..) => unimplemented!(),
-                                    Packet::Pong(..) => unimplemented!(),
-                                }
-                            }
+                            // promote the connection to a new node.
+                            unimplemented!();
+                            // if let Some(packet) = pending_connection.get_mut().receive_packet()? {
+                            //     match packet {
+                            //         Packet::Hello(ref hello) => {
+                            //             let connection = pending_connection.remove();
+                            //
+                            //             self.network.insert(Node {
+                            //                 connection: Some(connection),
+                            //                 uuid: hello.uuid,
+                            //             });
+                            //
+                            //             for sibling in hello.sibling_uuids.iter() {
+                            //                 self.network.connect(hello.uuid, sibling.clone());
+                            //             }
+                            //         },
+                            //         Packet::Ping(..) => unimplemented!(),
+                            //         Packet::Pong(..) => unimplemented!(),
+                            //     }
+                            // }
                         } else if let Some(mut node) = self.network.lookup_token_mut(token) {
                             node.connection.as_mut().unwrap().process_incoming_data()?;
 
