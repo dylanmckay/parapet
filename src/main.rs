@@ -1,17 +1,14 @@
 #![feature(question_mark)]
 #![feature(associated_consts)]
-#![feature(custom_derive, plugin)]
 #![feature(conservative_impl_trait)]
-
-#![plugin(serde_macros)]
 
 extern crate mio;
 extern crate slab;
 extern crate uuid;
 extern crate byteorder;
-extern crate serde;
-extern crate serde_json;
 extern crate graphsearch;
+#[macro_use]
+extern crate protocol as proto;
 
 use mio::tcp::*;
 use slab::Slab;
@@ -19,11 +16,12 @@ use slab::Slab;
 pub use self::node::*;
 pub use self::network::Network;
 pub use self::error::Error;
+pub use self::protocol::Packet;
 
 pub mod node;
 pub mod network;
 pub mod error;
-pub mod io;
+pub mod protocol;
 
 const SERVER_TOKEN: mio::Token = mio::Token(0);
 const SERVER_PORT: u16 = 53371;
@@ -82,8 +80,7 @@ impl Parapet
 
                         entry.insert(Connection {
                             token: token,
-                            socket: socket,
-                            builder: io::Builder::new(),
+                            protocol: proto::wire::stream::Connection::new(socket, proto::wire::middleware::pipeline::default()),
                         });
                     },
                     token => {
@@ -92,7 +89,7 @@ impl Parapet
                         if let Some(mut pending_connection) = self.pending_connections.entry(token) {
                             pending_connection.get_mut().process_incoming_data()?;
 
-                            if let Some(packet) = pending_connection.get_mut().take_packet()? {
+                            if let Some(packet) = pending_connection.get_mut().receive_packet()? {
                                 match packet {
                                     Packet::Hello(ref hello) => {
                                         let connection = pending_connection.remove();
@@ -106,12 +103,14 @@ impl Parapet
                                             self.network.connect(hello.uuid, sibling.clone());
                                         }
                                     },
+                                    Packet::Ping(..) => unimplemented!(),
+                                    Packet::Pong(..) => unimplemented!(),
                                 }
                             }
                         } else if let Some(mut node) = self.network.lookup_token_mut(token) {
                             node.connection.as_mut().unwrap().process_incoming_data()?;
 
-                            if let Some(packet) = node.connection.as_mut().unwrap().take_packet()? {
+                            if let Some(packet) = node.connection.as_mut().unwrap().receive_packet()? {
                                 match packet {
                                     // Adding a new node to the network, but not directly connected
                                     // to us.
@@ -121,6 +120,8 @@ impl Parapet
                                             connection: None,
                                         });
                                     },
+                                    Packet::Ping(..) => unimplemented!(),
+                                    Packet::Pong(..) => unimplemented!(),
                                 }
                             }
                         } else {

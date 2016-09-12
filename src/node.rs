@@ -1,35 +1,22 @@
+use {Packet, Error};
 use mio::tcp::*;
 use uuid::Uuid;
-use io;
-use std;
-
-use std::io::prelude::*;
+use proto;
 
 pub struct Connection
 {
     pub token: ::mio::Token,
-    pub socket: TcpStream,
-    pub builder: io::Builder,
+    pub protocol: proto::wire::stream::Connection<Packet, TcpStream>,
 }
 
 impl Connection
 {
-    pub fn process_incoming_data(&mut self) -> Result<(), std::io::Error> {
-        let mut array = [0; 10000];
-        let bytes_read = self.socket.read(&mut array)?;
-
-        self.builder.give_bytes(&array[0..bytes_read]);
-
-        Ok(())
+    pub fn process_incoming_data(&mut self) -> Result<(), Error> {
+        Ok(self.protocol.process_incoming_data()?)
     }
 
-    pub fn take_packet(&mut self) -> Result<Option<::Packet>, std::io::Error> {
-        if let Some(pkt) = self.builder.take_packet() {
-            let mut body = std::io::Cursor::new(pkt.payload);
-            Ok(Some(::Packet::read(&mut body).unwrap()))
-        } else {
-            Ok(None)
-        }
+    pub fn receive_packet(&mut self) -> Result<Option<Packet>, Error> {
+        Ok(self.protocol.receive_packet()?)
     }
 }
 
