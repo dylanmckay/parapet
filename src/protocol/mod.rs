@@ -1,3 +1,7 @@
+pub use self::network::{Network, Node, Edge};
+
+pub mod network;
+
 use uuid::Uuid;
 
 define_packet!(Ping {
@@ -9,7 +13,7 @@ define_packet!(Pong {
 });
 
 define_packet!(DescribeNetwork {
-    foo: u8
+    network: Network
 });
 
 define_packet!(Hello {
