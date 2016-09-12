@@ -42,25 +42,7 @@ const SERVER_ADDRESS: (&'static str, u16) = ("127.0.0.1", SERVER_PORT);
 
 pub enum State
 {
-    /// We just connected and need to send a 'Ping'.
-    PendingPing {
-        connection: Connection,
-    },
-    /// We sent a `Ping` and are awaiting a `Pong`.
-    PendingPong {
-        connection: Connection,
-
-        /// The original ping that we sent.
-        original_ping: protocol::Ping,
-    },
-    /// Pong matched original data, we now need to send a `JoinRequest`.
-    PendingJoinRequest {
-        connection: Connection,
-    },
-    /// We sent a `JoinRequest` and are awaiting a response.
-    PendingJoinResponse {
-        connection: Connection,
-    },
+    Pending(ProtoConnection),
     /// We are now a connected node in the network.
     Connected {
         uuid: Uuid,
@@ -142,36 +124,52 @@ impl Parapet
             mio::PollOpt::edge())?;
 
         Ok(Parapet {
-            state: State::PendingPing {
+            state: State::Pending(ProtoConnection::PendingPing {
                 connection: Connection {
                     token: tmp_token,
                     protocol: proto::wire::stream::Connection::new(stream, proto::wire::middleware::pipeline::default()),
                 },
-            },
+            }),
             poll: poll,
         })
     }
 
     /// Attempts to advance the current state if possible.
     pub fn advance(&mut self) -> Result<(), Error> {
-        self.mutate_state(|_, state| match state {
-            State::PendingPing { mut connection } => {
-                let ping = protocol::Ping {
-                    // TODO: randomise this data
-                    data: vec![6, 2, 6, 1, 8, 8],
-                };
+        self.mutate_state(|parapet, state|
+            if let State::Pending(state) = state {
+                match state {
+                    ProtoConnection::PendingPing { mut connection } => {
+                        let ping = protocol::Ping {
+                            // TODO: randomise this data
+                            data: vec![6, 2, 6, 1, 8, 8],
+                        };
 
-                connection.send_packet(&Packet::Ping(ping.clone()))?;
+                        connection.send_packet(&Packet::Ping(ping.clone()))?;
 
-                Ok(State::PendingPong { original_ping: ping, connection: connection })
-            },
-            State::PendingJoinRequest { mut connection } => {
-                connection.send_packet(&Packet::JoinRequest(protocol::JoinRequest))?;
+                        Ok(State::Pending(ProtoConnection::PendingPong { original_ping: ping, connection: connection }))
+                    },
+                    ProtoConnection::PendingJoinRequest { mut connection } => {
+                        connection.send_packet(&Packet::JoinRequest(protocol::JoinRequest))?;
 
-                Ok(State::PendingJoinResponse { connection: connection })
-            },
-            state => Ok(state), // we don't have to do anything.
-        })
+                        Ok(State::Pending(ProtoConnection::PendingJoinResponse { connection: connection }))
+                    },
+                    ProtoConnection::Complete { your_uuid, network, .. } => {
+                        let listener = Parapet::bind(&mut parapet.poll, SERVER_ADDRESS)?;
+
+                        Ok(State::Connected {
+                            uuid: your_uuid,
+                            listener: listener,
+                            pending_connections: Slab::with_capacity(1024),
+                            network: network,
+                        })
+                    },
+                    state => Ok(State::Pending(state)), // we don't have to do anything.
+                }
+            } else {
+                Ok(state)
+            }
+        )
     }
 
     pub fn run(&mut self) -> Result<(), Error> {
@@ -216,7 +214,70 @@ impl Parapet
                         assert_eq!(event.kind().is_readable(), true);
 
                         // We have received data from a node.
-                        self.mutate_state(|parapet, state| match state {
+                        self.mutate_state(|_, state| match state {
+                            State::Pending(state) => match state {
+                                ProtoConnection::PendingPing { mut connection } => {
+                                    connection.process_incoming_data()?;
+
+                                    Ok(State::Pending(ProtoConnection::PendingPing { connection: connection }))
+                                },
+                                ProtoConnection::PendingPong { mut connection, original_ping } => {
+                                    connection.process_incoming_data()?;
+
+                                    if let Some(packet) = connection.receive_packet()? {
+                                        if let Packet::Pong(pong) = packet {
+                                            // Check if the echoed data is correct.
+                                            if pong.data != original_ping.data {
+                                                Err(Error::InvalidPong{
+                                                    expected: original_ping.data.clone(),
+                                                    received: pong.data,
+                                                })
+                                            } else {
+                                                Ok(State::Pending(ProtoConnection::PendingJoinRequest { connection: connection }))
+                                            }
+                                        } else {
+                                            Err(Error::UnexpectedPacket { expected: "pong", received: packet })
+                                        }
+                                    } else {
+                                        // we haven't received a full packet yet.
+                                        Ok(State::Pending(ProtoConnection::PendingPong { connection: connection, original_ping: original_ping }))
+                                    }
+                                },
+                                ProtoConnection::PendingJoinRequest { mut connection } => {
+                                    connection.process_incoming_data()?;
+
+                                    Ok(State::Pending(ProtoConnection::PendingJoinRequest { connection: connection }))
+                                },
+                                ProtoConnection::PendingJoinResponse { mut connection } => {
+                                    connection.process_incoming_data()?;
+
+                                    if let Some(packet) = connection.receive_packet()? {
+                                        if let Packet::JoinResponse(join_response) = packet {
+                                            let mut network: Network = join_response.network.into();
+
+                                            network.set_connection(&join_response.my_uuid, connection);
+
+                                            Ok(State::Pending(ProtoConnection::Complete {
+                                                your_uuid: join_response.your_uuid,
+                                                my_uuid: join_response.my_uuid,
+                                                network: network,
+                                            }))
+                                        } else {
+                                            Err(Error::UnexpectedPacket { expected: "join response", received: packet })
+                                        }
+                                    } else {
+                                        Ok(State::Pending(ProtoConnection::PendingJoinResponse { connection: connection }))
+                                    }
+                                },
+                                ProtoConnection::Complete { your_uuid, my_uuid, network } => {
+                                    // nothing to do
+                                    Ok(State::Pending(ProtoConnection::Complete {
+                                        your_uuid: your_uuid,
+                                        my_uuid: my_uuid,
+                                        network: network,
+                                    }))
+                                },
+                            },
                             State::Connected { uuid, mut pending_connections, listener, network } => {
                                 if let Some(mut pending_connection) = pending_connections.entry(token) {
                                     pending_connection.get_mut().process_incoming_data()?;
@@ -231,58 +292,6 @@ impl Parapet
                                     listener: listener,
                                     network: network,
                                 })
-                            },
-                            State::PendingPing { mut connection } => {
-                                connection.process_incoming_data()?;
-
-                                Ok(State::PendingPing { connection: connection })
-                            },
-                            State::PendingPong { mut connection, original_ping } => {
-                                connection.process_incoming_data()?;
-
-                                if let Some(packet) = connection.receive_packet()? {
-                                    if let Packet::Pong(pong) = packet {
-                                        // Check if the echoed data is correct.
-                                        if pong.data != original_ping.data {
-                                            Err(Error::InvalidPong{
-                                                expected: original_ping.data.clone(),
-                                                received: pong.data,
-                                            })
-                                        } else {
-                                            Ok(State::PendingJoinRequest { connection: connection })
-                                        }
-                                    } else {
-                                        Err(Error::UnexpectedPacket { expected: "pong", received: packet })
-                                    }
-                                } else {
-                                    // we haven't received a full packet yet.
-                                    Ok(State::PendingPong { connection: connection, original_ping: original_ping })
-                                }
-                            },
-                            State::PendingJoinRequest { mut connection } => {
-                                connection.process_incoming_data()?;
-
-                                Ok(State::PendingJoinRequest { connection: connection })
-                            },
-                            State::PendingJoinResponse { mut connection } => {
-                                connection.process_incoming_data()?;
-
-                                if let Some(packet) = connection.receive_packet()? {
-                                    if let Packet::JoinResponse(join_response) = packet {
-                                        let listener = Parapet::bind(&mut parapet.poll, SERVER_ADDRESS)?;
-
-                                        Ok(State::Connected {
-                                            uuid: join_response.your_uuid,
-                                            listener: listener,
-                                            pending_connections: Slab::with_capacity(1024),
-                                            network: join_response.network.into(),
-                                        })
-                                    } else {
-                                        Err(Error::UnexpectedPacket { expected: "join response", received: packet })
-                                    }
-                                } else {
-                                    Ok(State::PendingJoinResponse { connection: connection })
-                                }
                             },
                         })?;
                     },

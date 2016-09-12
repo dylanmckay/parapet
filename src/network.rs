@@ -85,6 +85,10 @@ impl Network
         }).collect()
     }
 
+    pub fn set_connection(&mut self, uuid: &Uuid, connection: Connection) {
+        self.nodes.get_mut(uuid).unwrap().connection = Some(connection);
+    }
+
     pub fn build_graph(&self) -> graphsearch::Graph<Uuid> {
         let raw_graph: Vec<_> = self.nodes.values().map(|node| {
             graphsearch::Node {

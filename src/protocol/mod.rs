@@ -16,13 +16,9 @@ define_packet!(JoinRequest);
 
 define_packet!(JoinResponse {
     your_uuid: Uuid,
+    my_uuid: Uuid,
     network: Network
 });
-
-// define_packet!(Hello {
-//     uuid: Uuid,
-//     sibling_uuids: Vec<Uuid>
-// });
 
 // Defines a packet kind enum.
 define_packet_kind!(Packet: u32 {

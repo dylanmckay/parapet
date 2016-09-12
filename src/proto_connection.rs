@@ -1,24 +1,43 @@
+use Network;
 use {Connection, Error};
+use protocol;
+
+use uuid::Uuid;
 
 /// A new connection which has not yet identified itself as a node.
-pub struct ProtoConnection
+pub enum ProtoConnection
 {
-    pub connection: Connection,
-    pub state: State,
-}
+    /// We just connected and need to send a 'Ping'.
+    PendingPing {
+        connection: Connection,
+    },
+    /// We sent a `Ping` and are awaiting a `Pong`.
+    PendingPong {
+        connection: Connection,
 
-pub enum State
-{
-    /// New connection, no data send/received.
-    New,
+        /// The original ping that we sent.
+        original_ping: protocol::Ping,
+    },
+    /// Pong matched original data, we now need to send a `JoinRequest`.
+    PendingJoinRequest {
+        connection: Connection,
+    },
+    /// We sent a `JoinRequest` and are awaiting a response.
+    PendingJoinResponse {
+        connection: Connection,
+    },
+    Complete {
+        your_uuid: Uuid,
+        my_uuid: Uuid,
+        network: Network,
+    },
 }
 
 impl ProtoConnection
 {
     pub fn new(connection: Connection) -> Self {
-        ProtoConnection {
+        ProtoConnection::PendingPing {
             connection: connection,
-            state: State::New,
         }
     }
 
