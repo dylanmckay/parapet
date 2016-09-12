@@ -13,15 +13,17 @@ extern crate protocol as proto;
 use mio::tcp::*;
 use slab::Slab;
 
-pub use self::node::*;
-pub use self::network::Network;
+pub use self::connection::*;
+pub use self::network::{Network, Node, Edge};
 pub use self::error::Error;
 pub use self::protocol::Packet;
+pub use self::path::Path;
 
-pub mod node;
+pub mod connection;
 pub mod network;
 pub mod error;
 pub mod protocol;
+pub mod path;
 
 const SERVER_TOKEN: mio::Token = mio::Token(0);
 const SERVER_PORT: u16 = 53371;

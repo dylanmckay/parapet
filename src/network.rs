@@ -1,4 +1,4 @@
-use Node;
+use Connection;
 use std::collections::{HashMap, VecDeque};
 
 use uuid::Uuid;
@@ -12,11 +12,17 @@ pub struct Network
     pub edges: Vec<Edge>,
 }
 
+pub struct Node
+{
+    pub uuid: Uuid,
+    pub connection: Option<Connection>,
+}
+
 /// An edge betweeb two nodes.
 ///
 /// Node `a` is always the smaller UUID, and node `b` is
 /// always the bigger one.
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Edge
 {
     pub a: Uuid,

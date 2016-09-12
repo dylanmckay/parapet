@@ -1,6 +1,5 @@
 use {Packet, Error};
 use mio::tcp::*;
-use uuid::Uuid;
 use proto;
 
 pub struct Connection
@@ -18,11 +17,5 @@ impl Connection
     pub fn receive_packet(&mut self) -> Result<Option<Packet>, Error> {
         Ok(self.protocol.receive_packet()?)
     }
-}
-
-pub struct Node
-{
-    pub uuid: Uuid,
-    pub connection: Option<Connection>,
 }
 

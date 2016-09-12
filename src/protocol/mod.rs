@@ -8,6 +8,10 @@ define_packet!(Pong {
     data: Vec<u8>
 });
 
+define_packet!(DescribeNetwork {
+    foo: u8
+});
+
 define_packet!(Hello {
     uuid: Uuid,
     sibling_uuids: Vec<Uuid>
