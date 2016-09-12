@@ -16,17 +16,14 @@ extern crate graphsearch;
 use mio::tcp::*;
 use slab::Slab;
 
-pub use self::packet::*;
 pub use self::node::*;
 pub use self::network::Network;
 pub use self::error::Error;
 
-pub mod packet;
 pub mod node;
 pub mod network;
 pub mod error;
 pub mod io;
-pub mod protocol;
 
 const SERVER_TOKEN: mio::Token = mio::Token(0);
 const SERVER_PORT: u16 = 53371;
