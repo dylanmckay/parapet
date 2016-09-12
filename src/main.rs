@@ -7,6 +7,7 @@ extern crate slab;
 extern crate uuid;
 extern crate byteorder;
 extern crate graphsearch;
+extern crate clap;
 #[macro_use]
 extern crate protocol as proto;
 
@@ -33,6 +34,11 @@ const SERVER_TOKEN: mio::Token = mio::Token(0);
 
 const SERVER_PORT: u16 = 53371;
 const SERVER_ADDRESS: (&'static str, u16) = ("127.0.0.1", SERVER_PORT);
+
+const DESCRIPTION: &'static str = "
+    If you pass an address, it will connect to an existing node on
+    some network, otherwise a new network will be created.
+";
 
 // Flow:
 //
@@ -173,8 +179,6 @@ impl Parapet
     }
 
     pub fn run(&mut self) -> Result<(), Error> {
-        println!("running server");
-
         // Create storage for events
         let mut events = mio::Events::with_capacity(1024);
 
@@ -211,8 +215,6 @@ impl Parapet
                         }
                     },
                     token => {
-                        assert_eq!(event.kind().is_readable(), true);
-
                         // We have received data from a node.
                         self.mutate_state(|_, state| match state {
                             State::Pending(state) => match state {
@@ -302,8 +304,29 @@ impl Parapet
 }
 
 fn main() {
-    // Create a new network.
-    let mut parapet = Parapet::new(SERVER_ADDRESS).unwrap();
+    use clap::{App, Arg};
+
+    let matches = App::new("parapet")
+                      // .version("1.0")
+                      .author("Dylan <dylanmckay34@gmail.com>")
+                      .about("Peer-to-peer build system")
+                      .after_help(DESCRIPTION)
+                      .arg(Arg::with_name("address")
+                           .help("The address of an existing node on a network to connect to")
+                           .index(1))
+                      .get_matches();
+
+    let mut parapet = if let Some(address) = matches.value_of("address") {
+        println!("connecting to existing network on {}", address);
+
+        Parapet::connect(address).unwrap()
+    } else {
+        println!("running new network on {}:{}", SERVER_ADDRESS.0, SERVER_ADDRESS.1);
+
+        // Create a new network.
+        Parapet::new(SERVER_ADDRESS).unwrap()
+    };
+
     parapet.run().ok();
 }
 
