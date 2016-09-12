@@ -12,19 +12,23 @@ define_packet!(Pong {
     data: Vec<u8>
 });
 
-define_packet!(DescribeNetwork {
+define_packet!(JoinRequest);
+
+define_packet!(JoinResponse {
+    your_uuid: Uuid,
     network: Network
 });
 
-define_packet!(Hello {
-    uuid: Uuid,
-    sibling_uuids: Vec<Uuid>
-});
+// define_packet!(Hello {
+//     uuid: Uuid,
+//     sibling_uuids: Vec<Uuid>
+// });
 
 // Defines a packet kind enum.
 define_packet_kind!(Packet: u32 {
     0x00 => Ping,
     0x01 => Pong,
-    0x02 => Hello
+    0x02 => JoinRequest,
+    0x03 => JoinResponse
 });
 

@@ -17,5 +17,10 @@ impl Connection
     pub fn receive_packet(&mut self) -> Result<Option<Packet>, Error> {
         Ok(self.protocol.receive_packet()?)
     }
+
+    pub fn send_packet(&mut self, packet: &Packet) -> Result<(), Error> {
+        self.protocol.send_packet(packet)?;
+        Ok(())
+    }
 }
 
