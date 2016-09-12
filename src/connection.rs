@@ -1,6 +1,7 @@
 use {Packet, Error};
 use mio::tcp::*;
 use proto;
+use protocol;
 
 pub struct Connection
 {
@@ -20,6 +21,18 @@ impl Connection
 
     pub fn send_packet(&mut self, packet: &Packet) -> Result<(), Error> {
         self.protocol.send_packet(packet)?;
+        Ok(())
+    }
+
+    /// Terminate the connection with a reason.
+    pub fn terminate<S>(mut self, reason: S) -> Result<(), Error>
+        where S: Into<String> {
+        self.protocol.send_packet(&Packet::Terminate(protocol::Terminate{
+            reason: reason.into(),
+        }))?;
+
+        // Connection is dropped when connection goes out of scope
+
         Ok(())
     }
 }

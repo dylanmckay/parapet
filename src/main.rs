@@ -35,10 +35,24 @@ const SERVER_TOKEN: mio::Token = mio::Token(0);
 const SERVER_PORT: u16 = 53371;
 const SERVER_ADDRESS: (&'static str, u16) = ("127.0.0.1", SERVER_PORT);
 
+const CLIENT_NAME: &'static str = "vanilla";
+const CLIENT_VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
+const PROTOCOL_MAJOR: u16 = 0;
+const PROTOCOL_REVISION: u16 = 0;
+
 const DESCRIPTION: &'static str = "
     If you pass an address, it will connect to an existing node on
     some network, otherwise a new network will be created.
 ";
+
+fn user_agent() -> protocol::UserAgent {
+    protocol::UserAgent {
+        client: format!("{} v{}", CLIENT_NAME, CLIENT_VERSION),
+        protocol_major: PROTOCOL_MAJOR,
+        protocol_revision: PROTOCOL_REVISION,
+    }
+}
 
 // Flow:
 //
@@ -147,6 +161,7 @@ impl Parapet
                 match state {
                     ProtoConnection::PendingPing { mut connection } => {
                         let ping = protocol::Ping {
+                            user_agent: user_agent(),
                             // TODO: randomise this data
                             data: vec![6, 2, 6, 1, 8, 8],
                         };
@@ -230,13 +245,21 @@ impl Parapet
                                         if let Packet::Pong(pong) = packet {
                                             // Check if the echoed data is correct.
                                             if pong.data != original_ping.data {
-                                                Err(Error::InvalidPong{
+                                                return Err(Error::InvalidPong{
                                                     expected: original_ping.data.clone(),
                                                     received: pong.data,
-                                                })
-                                            } else {
-                                                Ok(State::Pending(ProtoConnection::PendingJoinRequest { connection: connection }))
+                                                });
                                             }
+
+                                            // Ensure the protocol versions are compatible.
+                                            if !pong.user_agent.is_compatible(&original_ping.user_agent) {
+                                                connection.terminate("protocol versions are not compatible")?;
+
+                                                // FIXME: Remove the connection.
+                                                unimplemented!();
+                                            }
+
+                                            Ok(State::Pending(ProtoConnection::PendingJoinRequest { connection: connection }))
                                         } else {
                                             Err(Error::UnexpectedPacket { expected: "pong", received: packet })
                                         }

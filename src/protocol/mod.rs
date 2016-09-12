@@ -1,19 +1,32 @@
 pub use self::network::{Network, Node, Edge};
+pub use self::user_agent::UserAgent;
 
 pub mod network;
+pub mod user_agent;
 
 use uuid::Uuid;
 
+// Ping a node with some information.
 define_packet!(Ping {
+    user_agent: UserAgent,
     data: Vec<u8>
 });
 
+// Response to a ping.
 define_packet!(Pong {
+    user_agent: UserAgent,
     data: Vec<u8>
 });
 
+// Immediately disconnect.
+define_packet!(Terminate {
+    reason: String
+});
+
+// Request to join a network.
 define_packet!(JoinRequest);
 
+// Response for a network join request.
 define_packet!(JoinResponse {
     your_uuid: Uuid,
     my_uuid: Uuid,
@@ -24,7 +37,8 @@ define_packet!(JoinResponse {
 define_packet_kind!(Packet: u32 {
     0x00 => Ping,
     0x01 => Pong,
-    0x02 => JoinRequest,
-    0x03 => JoinResponse
+    0x05 => Terminate,
+    0x10 => JoinRequest,
+    0x11 => JoinResponse
 });
 

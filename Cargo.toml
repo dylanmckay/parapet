@@ -13,6 +13,6 @@ slab = "0.3.0"
 uuid = { version = "0.3.1", features = ["v4", "serde"] }
 byteorder = "0.5.3"
 graphsearch = "0.6.0"
-protocol = { version = "0.1.4", features = ["uuid"] }
+protocol = { version = "0.1.5", features = ["uuid"] }
 clap = "2.11"
 
