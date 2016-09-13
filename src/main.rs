@@ -63,7 +63,7 @@ fn user_agent() -> protocol::UserAgent {
 pub struct ConnectedNode
 {
     pub uuid: Uuid,
-    pub listener: TcpListener,
+    pub listener: Option<TcpListener>,
 
     /// The network we are apart of.
     pub network: Network,
@@ -101,13 +101,16 @@ impl Parapet
         let mut poll = mio::Poll::new()?;
 
         let listener = Parapet::bind(&mut poll, addr)?;
+        let uuid = Uuid::new_v4();
+
+        println!("assigning UUID {}", uuid);
 
         Ok(Parapet {
             state: State::Connected {
                 node: ConnectedNode {
-                    uuid: Uuid::new_v4(),
-                    listener: listener,
-                    network: Network::new(),
+                    uuid: uuid,
+                    listener: Some(listener),
+                    network: Network::new(uuid),
                 },
                 pending_connections: Slab::with_capacity(1024),
             },
@@ -181,14 +184,19 @@ impl Parapet
                     },
                     ProtoState::Complete { join_response } => {
                         let mut network: Network = join_response.network.into();
-                        let listener = Parapet::bind(&mut parapet.poll, SERVER_ADDRESS)?;
+                        let listener = match Parapet::bind(&mut parapet.poll, SERVER_ADDRESS) {
+                            Ok(listener) => Some(listener),
+                            Err(Error::Io(e)) => match e.kind() {
+                                std::io::ErrorKind::AddrInUse => {
+                                    println!("there is already something listening on port {} - we're not going to listen", SERVER_PORT);
+                                    None
+                                },
+                                _ => return Err(Error::Io(e)),
+                            },
+                            Err(e) => return Err(e),
+                        };
 
                         network.set_connection(&join_response.my_uuid, proto_connection.connection);
-
-                        let mut dot_file = std::fs::File::create("./network.dot")?;
-                        graphviz::render_to(&network, &mut dot_file);
-                        drop(dot_file);
-                        println!("written dotfile");
 
                         Ok(State::Connected {
                             node: ConnectedNode {
@@ -212,6 +220,7 @@ impl Parapet
         let mut events = mio::Events::with_capacity(1024);
 
         loop {
+            self.advance_new_connection_state()?;
             self.poll.poll(&mut events, None).unwrap();
 
             for event in events.iter() {
@@ -219,7 +228,7 @@ impl Parapet
                     // A pending connection.
                     SERVER_TOKEN => {
                         if let State::Connected { ref mut node, ref mut pending_connections } = self.state {
-                            let (socket, addr) = node.listener.accept()?;
+                            let (socket, addr) = node.listener.as_mut().unwrap().accept()?;
 
                             println!("accepted connection from {:?}", addr);
 
@@ -229,10 +238,10 @@ impl Parapet
                             self.poll.register(&socket, token, mio::Ready::readable() | mio::Ready::writable(),
                                 mio::PollOpt::edge())?;
 
-                            entry.insert(ProtoNode(ProtoConnection::new(Connection {
+                            entry.insert(ProtoNode::new(Connection {
                                 token: token,
                                 protocol: proto::wire::stream::Connection::new(socket, proto::wire::middleware::pipeline::default()),
-                            })));
+                            }));
                         } else {
                             // We only start listening after we are successfully connected to the
                             // network.
@@ -240,12 +249,6 @@ impl Parapet
                         }
                     },
                     token => {
-                        println!("event kind: {:?}", event.kind());
-
-                        if event.kind().is_writable() {
-                            self.advance_new_connection_state()?;
-                        }
-
                         // TODO: check for `HUP` event.
 
                         match self.state {
@@ -260,6 +263,8 @@ impl Parapet
                                     ProtoState::PendingPong { original_ping } => {
                                         if let Some(packet) = proto_connection.connection.receive_packet().unwrap() {
                                             if let Packet::Pong(pong) = packet {
+                                                println!("received pong");
+
                                                 // Check if the echoed data is correct.
                                                 if pong.data != original_ping.data {
                                                     return Err(Error::InvalidPong{

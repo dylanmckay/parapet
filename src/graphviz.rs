@@ -10,7 +10,7 @@ impl<'a> dot::Labeller<'a, Uuid, Edge> for &'a Network {
     fn graph_id(&'a self) -> dot::Id<'a> { dot::Id::new("network").unwrap() }
 
     fn node_id(&'a self, n: &Uuid) -> dot::Id<'a> {
-        dot::Id::new(format!("{}", n)).unwrap()
+        dot::Id::new(format!("{}", n.simple())).unwrap()
     }
 }
 

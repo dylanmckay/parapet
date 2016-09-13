@@ -52,15 +52,33 @@ impl Edge
 
 impl Network
 {
-    pub fn new() -> Self {
+    pub fn empty() -> Self {
         Network {
             nodes: HashMap::new(),
             edges: Vec::new(),
         }
     }
 
+    pub fn new(your_uuid: Uuid) -> Self {
+        let mut network = Network::empty();
+        network.insert(Node {
+            uuid: your_uuid,
+            connection: None,
+        });
+
+        network
+    }
+
     pub fn insert(&mut self, node: Node) {
         self.nodes.insert(node.uuid.clone(), node);
+    }
+
+    pub fn get(&self, uuid: &Uuid) -> Option<&Node> {
+        self.nodes.get(uuid)
+    }
+
+    pub fn get_mut(&mut self, uuid: &Uuid) -> Option<&mut Node> {
+        self.nodes.get_mut(uuid)
     }
 
     pub fn lookup_token_mut(&mut self, token: ::mio::Token) -> Option<&mut Node> {
@@ -86,6 +104,7 @@ impl Network
     }
 
     pub fn set_connection(&mut self, uuid: &Uuid, connection: Connection) {
+        println!("set conn for {}", uuid);
         self.nodes.get_mut(uuid).unwrap().connection = Some(connection);
     }
 
