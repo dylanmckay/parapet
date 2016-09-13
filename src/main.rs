@@ -178,6 +178,8 @@ impl Parapet
 
                         network.set_connection(&join_response.my_uuid, proto_connection.connection);
 
+                        println!("connected to network (with node uuid {})", &join_response.my_uuid);
+
                         Ok(State::Connected {
                             node: ConnectedNode {
                                 uuid: join_response.your_uuid,
