@@ -117,18 +117,6 @@ impl Parapet
         Ok(listener)
     }
 
-    pub fn mutate_state<F>(&mut self, mut f: F) -> Result<(), Error>
-        where F: FnMut(&mut Self, State) -> Result<State, Error> {
-        // TODO: remove this dirty hack. it is required because we
-        // can't move `state` out of the borrowed `self`.
-        let mut state = unsafe { std::mem::uninitialized() };
-        std::mem::swap(&mut state, &mut self.state);
-
-        self.state = f(self, state)?;
-
-        Ok(())
-    }
-
     /// Connect to an existing network.
     /// * `addr` - Any node on the network.
     pub fn connect<A>(addr: A) -> Result<Self, std::io::Error>
@@ -235,12 +223,9 @@ impl Parapet
                         }
                     },
                     token => {
-                        // We have received data from a node.
-                        self.mutate_state(|_, state| match state {
-                            State::Pending(mut proto_connection) => match proto_connection.state.clone() {
-                                ProtoState::PendingPing => {
-                                    Ok(State::Pending(proto_connection))
-                                },
+                        match self.state {
+                            State::Pending(ref mut proto_connection) => match proto_connection.state.clone() {
+                                ProtoState::PendingPing => (),
                                 ProtoState::PendingPong { original_ping } => {
                                     if let Some(packet) = proto_connection.connection.receive_packet()? {
                                         if let Packet::Pong(pong) = packet {
@@ -254,62 +239,57 @@ impl Parapet
 
                                             // Ensure the protocol versions are compatible.
                                             if !pong.user_agent.is_compatible(&original_ping.user_agent) {
-                                                proto_connection.connection.terminate("protocol versions are not compatible")?;
+                                                // proto_connection.connection.terminate("protocol versions are not compatible")?;
 
                                                 // FIXME: Remove the connection.
                                                 unimplemented!();
                                             }
 
                                             proto_connection.state = ProtoState::PendingJoinRequest;
-
-                                            Ok(State::Pending(proto_connection))
                                         } else {
-                                            Err(Error::UnexpectedPacket { expected: "pong", received: packet })
+                                            return Err(Error::UnexpectedPacket { expected: "pong", received: packet })
                                         }
                                     } else {
                                         // we haven't received a full packet yet.
-                                        Ok(State::Pending(proto_connection))
                                     }
                                 },
-                                ProtoState::PendingJoinRequest  => {
-                                    Ok(State::Pending(proto_connection))
-                                },
+                                ProtoState::PendingJoinRequest  => (),
                                 ProtoState::PendingJoinResponse => {
                                     if let Some(packet) = proto_connection.connection.receive_packet()? {
                                         if let Packet::JoinResponse(join_response) = packet {
                                             proto_connection.state = ProtoState::Complete { join_response: join_response };
-
-                                            Ok(State::Pending(proto_connection))
                                         } else {
-                                            Err(Error::UnexpectedPacket { expected: "join response", received: packet })
+                                            return Err(Error::UnexpectedPacket { expected: "join response", received: packet })
                                         }
-                                    } else {
-                                        Ok(State::Pending(proto_connection))
                                     }
                                 },
                                 ProtoState::Complete { .. } => {
                                     // nothing to do
-                                    Ok(State::Pending(proto_connection))
                                 },
                             },
-                            State::Connected { uuid, mut pending_connections, listener, network } => {
+                            State::Connected { ref mut pending_connections, .. } => {
                                 if let Some(mut pending_connection) = pending_connections.entry(token) {
                                     // promote connection to node if possible.
                                     unimplemented!();
                                 }
-
-                                Ok(State::Connected {
-                                    uuid: uuid,
-                                    pending_connections: pending_connections,
-                                    listener: listener,
-                                    network: network,
-                                })
                             },
-                        })?;
+                        }
                     },
                 }
             }
         }
+    }
+
+    fn mutate_state<F>(&mut self, mut f: F) -> Result<(), Error>
+        where F: FnMut(&mut Self, State) -> Result<State, Error> {
+        // TODO: remove this dirty hack. it is required because we
+        // can't move `state` out of the borrowed `self`.
+        let mut state = unsafe { std::mem::uninitialized() };
+        std::mem::swap(&mut state, &mut self.state);
+
+        self.state = f(self, state)?;
+
+        Ok(())
     }
 }
 
