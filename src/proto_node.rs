@@ -16,6 +16,7 @@ impl ProtoNode
         match self.0.state {
             ProtoState::PendingPing => {
                 if let Some(packet) = self.0.connection.receive_packet()? {
+                    println!("want ping got something");
                     if let Packet::Ping(ping) = packet {
                         let pong = protocol::Pong {
                             user_agent: ::user_agent(),

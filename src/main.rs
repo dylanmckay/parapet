@@ -139,14 +139,16 @@ impl Parapet
         let stream = TcpStream::connect(&address)?;
 
         let poll = mio::Poll::new()?;
-        poll.register(&stream, NEW_CONNECTION_TOKEN, mio::Ready::writable(),
+        poll.register(&stream, NEW_CONNECTION_TOKEN, mio::Ready::writable() | mio::Ready::readable(),
             mio::PollOpt::edge())?;
 
+        let connection = Connection {
+            token: NEW_CONNECTION_TOKEN,
+            protocol: proto::wire::stream::Connection::new(stream, proto::wire::middleware::pipeline::default()),
+        };
+
         Ok(Parapet {
-            state: State::Pending(ProtoConnection::new(Connection {
-                token: NEW_CONNECTION_TOKEN,
-                protocol: proto::wire::stream::Connection::new(stream, proto::wire::middleware::pipeline::default()),
-            })),
+            state: State::Pending(ProtoConnection::new(connection)),
             poll: poll,
         })
     }
@@ -163,6 +165,8 @@ impl Parapet
                             data: vec![6, 2, 6, 1, 8, 8],
                         };
 
+                        println!("sending ping");
+
                         proto_connection.connection.send_packet(&Packet::Ping(ping.clone()))?;
                         proto_connection.state = ProtoState::PendingPong { original_ping: ping };
 
@@ -170,6 +174,7 @@ impl Parapet
                     },
                     ProtoState::PendingJoinRequest => {
                         proto_connection.connection.send_packet(&Packet::JoinRequest(protocol::JoinRequest))?;
+                        println!("advancing from pending join request");
 
                         proto_connection.state = ProtoState::PendingJoinResponse;
                         Ok(State::Pending(proto_connection))
@@ -180,7 +185,10 @@ impl Parapet
 
                         network.set_connection(&join_response.my_uuid, proto_connection.connection);
 
-                        println!("connected to network (with node uuid {})", &join_response.my_uuid);
+                        let mut dot_file = std::fs::File::create("./network.dot")?;
+                        graphviz::render_to(&network, &mut dot_file);
+                        drop(dot_file);
+                        println!("written dotfile");
 
                         Ok(State::Connected {
                             node: ConnectedNode {
@@ -218,7 +226,7 @@ impl Parapet
                             let entry = pending_connections.vacant_entry().expect("ran out of connections");
                             let token = entry.index();
 
-                            self.poll.register(&socket, token, mio::Ready::readable(),
+                            self.poll.register(&socket, token, mio::Ready::readable() | mio::Ready::writable(),
                                 mio::PollOpt::edge())?;
 
                             entry.insert(ProtoNode(ProtoConnection::new(Connection {
@@ -234,7 +242,7 @@ impl Parapet
                     token => {
                         println!("event kind: {:?}", event.kind());
 
-                        if event.kind().is_readable() {
+                        if event.kind().is_writable() {
                             self.advance_new_connection_state()?;
                         }
 
@@ -243,11 +251,14 @@ impl Parapet
                         match self.state {
                             State::Pending(ref mut proto_connection) => {
                                 assert_eq!(token, NEW_CONNECTION_TOKEN);
+                                if !event.kind().is_readable() {
+                                    continue;
+                                }
 
                                 match proto_connection.state.clone() {
                                     ProtoState::PendingPing => (),
                                     ProtoState::PendingPong { original_ping } => {
-                                        if let Some(packet) = proto_connection.connection.receive_packet()? {
+                                        if let Some(packet) = proto_connection.connection.receive_packet().unwrap() {
                                             if let Packet::Pong(pong) = packet {
                                                 // Check if the echoed data is correct.
                                                 if pong.data != original_ping.data {
@@ -289,8 +300,12 @@ impl Parapet
                                 }
                             },
                             State::Connected { ref mut node, ref mut pending_connections } => {
+                                if !event.kind().is_readable() {
+                                    continue;
+                                }
+
                                 let mut pending_connection = pending_connections.entry(token).unwrap();
-                                pending_connection.get_mut().process_incoming_data(node)?;
+                                pending_connection.get_mut().process_incoming_data(node).unwrap();
                             },
                             State::Unconnected => unreachable!(),
                         }
