@@ -1,5 +1,6 @@
 #![feature(question_mark)]
 #![feature(associated_consts)]
+#![feature(const_fn)]
 #![feature(conservative_impl_trait)]
 
 extern crate mio;
@@ -32,7 +33,7 @@ use slab::Slab;
 
 use uuid::Uuid;
 
-const SERVER_TOKEN: mio::Token = mio::Token(0);
+const SERVER_TOKEN: mio::Token = mio::Token(usize::max_value() - 10);
 
 const SERVER_PORT: u16 = 53371;
 const SERVER_ADDRESS: (&'static str, u16) = ("127.0.0.1", SERVER_PORT);
