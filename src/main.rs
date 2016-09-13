@@ -74,6 +74,7 @@ pub struct ConnectedNode
 
 pub enum State
 {
+    Unconnected,
     Pending(ProtoConnection),
     /// We are now a connected node in the network.
     Connected {
@@ -279,6 +280,7 @@ impl Parapet
                                 let mut pending_connection = pending_connections.entry(token).unwrap();
                                 pending_connection.get_mut().process_incoming_data(node)?;
                             },
+                            State::Unconnected => unreachable!(),
                         }
                     },
                 }
@@ -288,9 +290,7 @@ impl Parapet
 
     fn mutate_state<F>(&mut self, mut f: F) -> Result<(), Error>
         where F: FnMut(&mut Self, State) -> Result<State, Error> {
-        // TODO: remove this dirty hack. it is required because we
-        // can't move `state` out of the borrowed `self`.
-        let mut state = unsafe { std::mem::uninitialized() };
+        let mut state = State::Unconnected;
         std::mem::swap(&mut state, &mut self.state);
 
         self.state = f(self, state)?;
