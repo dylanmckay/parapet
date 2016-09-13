@@ -14,31 +14,31 @@ define_composite_type!(Edge {
     b: Uuid
 });
 
-impl From<::Network> for Network
+impl Network
 {
-    fn from(network: ::Network) -> Self {
+    pub fn from_network(network: &::Network) -> Self {
         Network {
-            nodes: network.nodes.into_iter().map(|(_,n)| Node::from(n)).collect(),
-            edges: network.edges.into_iter().map(|e| Edge::from(e)).collect(),
+            nodes: network.nodes.iter().map(|(_,n)| Node::from_node(n)).collect(),
+            edges: network.edges.iter().map(|e| Edge::from_edge(e)).collect(),
         }
     }
 }
 
-impl From<::Node> for Node
+impl Node
 {
-    fn from(node: ::Node) -> Self {
+    pub fn from_node(node: &::Node) -> Self {
         Node {
-            uuid: node.uuid,
+            uuid: node.uuid.clone(),
         }
     }
 }
 
-impl From<::Edge> for Edge
+impl Edge
 {
-    fn from(edge: ::Edge) -> Self {
+    fn from_edge(edge: &::Edge) -> Self {
         Edge {
-            a: edge.a,
-            b: edge.b,
+            a: edge.a.clone(),
+            b: edge.b.clone(),
         }
     }
 }

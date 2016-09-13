@@ -57,6 +57,15 @@ fn user_agent() -> protocol::UserAgent {
     }
 }
 
+pub struct ConnectedNode
+{
+    pub uuid: Uuid,
+    pub listener: TcpListener,
+
+    /// The network we are apart of.
+    pub network: Network,
+}
+
 // Flow:
 //
 // Client sends 'JoinRequest' to some node
@@ -68,13 +77,9 @@ pub enum State
     Pending(ProtoConnection),
     /// We are now a connected node in the network.
     Connected {
-        uuid: Uuid,
-        listener: TcpListener,
+        node: ConnectedNode,
 
-        pending_connections: Slab<ProtoConnection, mio::Token>,
-
-        /// The network we are apart of.
-        network: Network,
+        pending_connections: Slab<ProtoNode, mio::Token>,
     },
 }
 
@@ -95,10 +100,12 @@ impl Parapet
 
         Ok(Parapet {
             state: State::Connected {
-                uuid: Uuid::new_v4(),
-                listener: listener,
+                node: ConnectedNode {
+                    uuid: Uuid::new_v4(),
+                    listener: listener,
+                    network: Network::new(),
+                },
                 pending_connections: Slab::with_capacity(1024),
-                network: Network::new(),
             },
             poll: poll,
         })
@@ -173,10 +180,12 @@ impl Parapet
                         network.set_connection(&join_response.my_uuid, proto_connection.connection);
 
                         Ok(State::Connected {
-                            uuid: join_response.your_uuid,
-                            listener: listener,
+                            node: ConnectedNode {
+                                uuid: join_response.your_uuid,
+                                listener: listener,
+                                network: network,
+                            },
                             pending_connections: Slab::with_capacity(1024),
-                            network: network,
                         })
                     },
                     _ => Ok(State::Pending(proto_connection)), // we don't have to do anything.
@@ -194,16 +203,14 @@ impl Parapet
         loop {
             self.poll.poll(&mut events, None).unwrap();
 
-            println!("advancing");
             self.advance()?;
 
             for event in events.iter() {
                 match event.token() {
                     // A pending connection.
                     SERVER_TOKEN => {
-                        println!("pending connection on server");
-                        if let State::Connected { ref mut pending_connections, ref mut listener, .. } = self.state {
-                            let (socket, addr) = listener.accept()?;
+                        if let State::Connected { ref mut node, ref mut pending_connections } = self.state {
+                            let (socket, addr) = node.listener.accept()?;
 
                             println!("accepted connection from {:?}", addr);
 
@@ -213,10 +220,10 @@ impl Parapet
                             self.poll.register(&socket, token, mio::Ready::readable(),
                                 mio::PollOpt::edge())?;
 
-                            entry.insert(ProtoConnection::new(Connection {
+                            entry.insert(ProtoNode(ProtoConnection::new(Connection {
                                 token: token,
                                 protocol: proto::wire::stream::Connection::new(socket, proto::wire::middleware::pipeline::default()),
-                            }));
+                            })));
                         } else {
                             // We only start listening after we are successfully connected to the
                             // network.
@@ -224,8 +231,6 @@ impl Parapet
                         }
                     },
                     token => {
-                        println!("received data from {:?}", token);
-
                         match self.state {
                             State::Pending(ref mut proto_connection) => match proto_connection.state.clone() {
                                 ProtoState::PendingPing => (),
@@ -270,11 +275,9 @@ impl Parapet
                                     // nothing to do
                                 },
                             },
-                            State::Connected { ref mut pending_connections, .. } => {
-                                if let Some(mut pending_connection) = pending_connections.entry(token) {
-                                    // promote connection to node if possible.
-                                    unimplemented!();
-                                }
+                            State::Connected { ref mut node, ref mut pending_connections } => {
+                                let mut pending_connection = pending_connections.entry(token).unwrap();
+                                pending_connection.get_mut().process_incoming_data(node)?;
                             },
                         }
                     },

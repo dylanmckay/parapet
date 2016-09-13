@@ -3,6 +3,7 @@ use mio::tcp::*;
 use proto;
 use protocol;
 
+#[derive(Debug)]
 pub struct Connection
 {
     pub token: ::mio::Token,

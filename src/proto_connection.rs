@@ -2,7 +2,7 @@ use Connection;
 use protocol;
 
 /// A new connection which has not yet identified itself as a node.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ProtoState
 {
     /// We just connected and need to send a 'Ping'.
@@ -24,6 +24,7 @@ pub enum ProtoState
     },
 }
 
+#[derive(Debug)]
 pub struct ProtoConnection
 {
     pub state: ProtoState,
