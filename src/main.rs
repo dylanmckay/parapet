@@ -193,15 +193,15 @@ impl Parapet
         loop {
             self.poll.poll(&mut events, None).unwrap();
 
+            println!("advancing");
             self.advance()?;
 
             for event in events.iter() {
                 match event.token() {
                     // A pending connection.
                     SERVER_TOKEN => {
+                        println!("pending connection on server");
                         if let State::Connected { ref mut pending_connections, ref mut listener, .. } = self.state {
-                            // Accept and drop the socket immediately, this will close
-                            // the socket and notify the client of the EOF.
                             let (socket, addr) = listener.accept()?;
 
                             println!("accepted connection from {:?}", addr);
@@ -223,6 +223,8 @@ impl Parapet
                         }
                     },
                     token => {
+                        println!("received data from {:?}", token);
+
                         match self.state {
                             State::Pending(ref mut proto_connection) => match proto_connection.state.clone() {
                                 ProtoState::PendingPing => (),
@@ -317,6 +319,6 @@ fn main() {
         Parapet::new(SERVER_ADDRESS).unwrap()
     };
 
-    parapet.run().ok();
+    parapet.run().unwrap();
 }
 
