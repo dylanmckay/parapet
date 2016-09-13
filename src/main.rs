@@ -150,7 +150,7 @@ impl Parapet
     }
 
     /// Attempts to advance the current state if possible.
-    pub fn advance(&mut self) -> Result<(), Error> {
+    pub fn advance_new_connection_state(&mut self) -> Result<(), Error> {
         self.mutate_state(|parapet, state|
             if let State::Pending(mut proto_connection) = state {
                 match proto_connection.state.clone() {
@@ -202,8 +202,6 @@ impl Parapet
         loop {
             self.poll.poll(&mut events, None).unwrap();
 
-            self.advance()?;
-
             for event in events.iter() {
                 match event.token() {
                     // A pending connection.
@@ -230,6 +228,14 @@ impl Parapet
                         }
                     },
                     token => {
+                        println!("event kind: {:?}", event.kind());
+
+                        if event.kind().is_readable() {
+                            self.advance_new_connection_state()?;
+                        }
+
+                        // TODO: check for `HUP` event.
+
                         match self.state {
                             State::Pending(ref mut proto_connection) => {
                                 assert_eq!(token, NEW_CONNECTION_TOKEN);
