@@ -34,6 +34,7 @@ use slab::Slab;
 use uuid::Uuid;
 
 const SERVER_TOKEN: mio::Token = mio::Token(usize::max_value() - 10);
+const NEW_CONNECTION_TOKEN: mio::Token = mio::Token(usize::max_value() - 11);
 
 const SERVER_PORT: u16 = 53371;
 const SERVER_ADDRESS: (&'static str, u16) = ("127.0.0.1", SERVER_PORT);
@@ -135,16 +136,13 @@ impl Parapet
 
         let stream = TcpStream::connect(&address)?;
 
-        // FIXME: We need a better way to track tokens
-        let tmp_token = mio::Token(500);
-
         let poll = mio::Poll::new()?;
-        poll.register(&stream, tmp_token, mio::Ready::writable(),
+        poll.register(&stream, NEW_CONNECTION_TOKEN, mio::Ready::writable(),
             mio::PollOpt::edge())?;
 
         Ok(Parapet {
             state: State::Pending(ProtoConnection::new(Connection {
-                token: tmp_token,
+                token: NEW_CONNECTION_TOKEN,
                 protocol: proto::wire::stream::Connection::new(stream, proto::wire::middleware::pipeline::default()),
             })),
             poll: poll,
@@ -233,48 +231,52 @@ impl Parapet
                     },
                     token => {
                         match self.state {
-                            State::Pending(ref mut proto_connection) => match proto_connection.state.clone() {
-                                ProtoState::PendingPing => (),
-                                ProtoState::PendingPong { original_ping } => {
-                                    if let Some(packet) = proto_connection.connection.receive_packet()? {
-                                        if let Packet::Pong(pong) = packet {
-                                            // Check if the echoed data is correct.
-                                            if pong.data != original_ping.data {
-                                                return Err(Error::InvalidPong{
-                                                    expected: original_ping.data.clone(),
-                                                    received: pong.data,
-                                                });
+                            State::Pending(ref mut proto_connection) => {
+                                assert_eq!(token, NEW_CONNECTION_TOKEN);
+
+                                match proto_connection.state.clone() {
+                                    ProtoState::PendingPing => (),
+                                    ProtoState::PendingPong { original_ping } => {
+                                        if let Some(packet) = proto_connection.connection.receive_packet()? {
+                                            if let Packet::Pong(pong) = packet {
+                                                // Check if the echoed data is correct.
+                                                if pong.data != original_ping.data {
+                                                    return Err(Error::InvalidPong{
+                                                        expected: original_ping.data.clone(),
+                                                        received: pong.data,
+                                                    });
+                                                }
+
+                                                // Ensure the protocol versions are compatible.
+                                                if !pong.user_agent.is_compatible(&original_ping.user_agent) {
+                                                    // proto_connection.connection.terminate("protocol versions are not compatible")?;
+
+                                                    // FIXME: Remove the connection.
+                                                    unimplemented!();
+                                                }
+
+                                                proto_connection.state = ProtoState::PendingJoinRequest;
+                                            } else {
+                                                return Err(Error::UnexpectedPacket { expected: "pong", received: packet })
                                             }
-
-                                            // Ensure the protocol versions are compatible.
-                                            if !pong.user_agent.is_compatible(&original_ping.user_agent) {
-                                                // proto_connection.connection.terminate("protocol versions are not compatible")?;
-
-                                                // FIXME: Remove the connection.
-                                                unimplemented!();
+                                        } else {
+                                            // we haven't received a full packet yet.
+                                        }
+                                    },
+                                    ProtoState::PendingJoinRequest  => (),
+                                    ProtoState::PendingJoinResponse => {
+                                        if let Some(packet) = proto_connection.connection.receive_packet()? {
+                                            if let Packet::JoinResponse(join_response) = packet {
+                                                proto_connection.state = ProtoState::Complete { join_response: join_response };
+                                            } else {
+                                                return Err(Error::UnexpectedPacket { expected: "join response", received: packet })
                                             }
-
-                                            proto_connection.state = ProtoState::PendingJoinRequest;
-                                        } else {
-                                            return Err(Error::UnexpectedPacket { expected: "pong", received: packet })
                                         }
-                                    } else {
-                                        // we haven't received a full packet yet.
-                                    }
-                                },
-                                ProtoState::PendingJoinRequest  => (),
-                                ProtoState::PendingJoinResponse => {
-                                    if let Some(packet) = proto_connection.connection.receive_packet()? {
-                                        if let Packet::JoinResponse(join_response) = packet {
-                                            proto_connection.state = ProtoState::Complete { join_response: join_response };
-                                        } else {
-                                            return Err(Error::UnexpectedPacket { expected: "join response", received: packet })
-                                        }
-                                    }
-                                },
-                                ProtoState::Complete { .. } => {
-                                    // nothing to do
-                                },
+                                    },
+                                    ProtoState::Complete { .. } => {
+                                        // nothing to do
+                                    },
+                                }
                             },
                             State::Connected { ref mut node, ref mut pending_connections } => {
                                 let mut pending_connection = pending_connections.entry(token).unwrap();
