@@ -15,4 +15,5 @@ byteorder = "0.5.3"
 graphsearch = "0.6.0"
 protocol = { version = "0.1.7", features = ["uuid"] }
 clap = "2.11"
+dot = "0.1"
 

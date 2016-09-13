@@ -9,6 +9,7 @@ extern crate uuid;
 extern crate byteorder;
 extern crate graphsearch;
 extern crate clap;
+extern crate dot;
 #[macro_use]
 extern crate protocol as proto;
 
@@ -27,6 +28,7 @@ pub mod network;
 pub mod error;
 pub mod protocol;
 pub mod path;
+pub mod graphviz;
 
 use mio::tcp::*;
 use slab::Slab;
