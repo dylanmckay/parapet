@@ -270,8 +270,23 @@ impl Parapet
                             }
 
                             let packet = if let Some(mut pending_connection) = pending_connections.entry(token) {
-                                pending_connection.get_mut().process_incoming_data(node).unwrap();
-                                continue;
+                                pending_connection.get_mut().process_incoming_data(node)?;
+
+                                let pending_connection = if pending_connection.get().is_complete() {
+                                    pending_connection.remove()
+                                } else {
+                                    continue;
+                                };
+
+                                if let PendingState::Complete { ref join_response } = pending_connection.state {
+                                    node.network.insert(network::Node {
+                                        uuid: join_response.your_uuid.clone(),
+                                        connection: Some(pending_connection.connection),
+                                    });
+                                    continue;
+                                } else {
+                                    continue;
+                                }
                             } else if let Some(from_node) = node.network.lookup_token_mut(token) {
                                 // we received a packet from an established node
 
