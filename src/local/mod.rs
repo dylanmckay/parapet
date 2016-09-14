@@ -23,7 +23,7 @@ const NEW_CONNECTION_TOKEN: mio::Token = mio::Token(usize::max_value() - 11);
 // Server responds with 'JoinResponse'
 // Client is now ready to act as server.
 
-pub enum State
+pub enum Node
 {
     Unconnected,
     Pending(pending::Node),
@@ -37,7 +37,7 @@ pub enum State
 
 pub struct Parapet
 {
-    pub state: State,
+    pub node: Node,
     pub poll: mio::Poll,
 }
 
@@ -54,7 +54,7 @@ impl Parapet
         println!("assigning UUID {}", uuid);
 
         Ok(Parapet {
-            state: State::Connected {
+            node: Node::Connected {
                 node: connected::Node {
                     uuid: uuid,
                     listener: Some(listener),
@@ -99,18 +99,18 @@ impl Parapet
         };
 
         Ok(Parapet {
-            state: State::Pending(pending::Node::new(connection)),
+            node: Node::Pending(pending::Node::new(connection)),
             poll: poll,
         })
     }
 
     /// Attempts to advance the current state if possible.
     pub fn advance_new_connection_state(&mut self) -> Result<(), Error> {
-        let mut current_state = State::Unconnected;
-        std::mem::swap(&mut current_state, &mut self.state);
+        let mut current_node = Node::Unconnected;
+        std::mem::swap(&mut current_node, &mut self.node);
 
-        self.state = match current_state {
-            State::Pending(mut node) => {
+        self.node = match current_node {
+            Node::Pending(mut node) => {
                 node.advance_state()?;
 
                 if let PendingState::Complete { join_response } = node.state.clone() {
@@ -129,7 +129,7 @@ impl Parapet
                     let mut network: network::Network = join_response.network.into();
                     network.set_connection(&join_response.my_uuid, node.connection);
 
-                    State::Connected {
+                    Node::Connected {
                         node: connected::Node {
                             uuid: join_response.your_uuid,
                             listener: listener,
@@ -138,10 +138,10 @@ impl Parapet
                         pending_connections: Slab::with_capacity(1024),
                     }
                 } else {
-                    State::Pending(node)
+                    Node::Pending(node)
                 }
             },
-            state => state,
+            node => node,
         };
 
         Ok(())
@@ -164,7 +164,7 @@ impl Parapet
             match event.token() {
                 // A pending connection.
                 SERVER_TOKEN => {
-                    if let State::Connected { ref mut node, ref mut pending_connections } = self.state {
+                    if let Node::Connected { ref mut node, ref mut pending_connections } = self.node {
                         let (socket, addr) = node.listener.as_mut().unwrap().accept()?;
 
                         println!("accepted connection from {:?}", addr);
@@ -188,17 +188,17 @@ impl Parapet
                 token => {
                     // TODO: check for `HUP` event.
 
-                    match self.state {
-                        State::Pending(ref mut proto_connection) => {
+                    match self.node {
+                        Node::Pending(ref mut pending_node) => {
                             assert_eq!(token, NEW_CONNECTION_TOKEN);
                             if !event.kind().is_readable() {
                                 continue;
                             }
 
-                            match proto_connection.state.clone() {
+                            match pending_node.state.clone() {
                                 PendingState::PendingPing => (),
                                 PendingState::PendingPong { original_ping } => {
-                                    if let Some(packet) = proto_connection.connection.receive_packet().unwrap() {
+                                    if let Some(packet) = pending_node.connection.receive_packet().unwrap() {
                                         if let PacketKind::Pong(pong) = packet.kind {
                                             println!("received pong");
 
@@ -212,13 +212,13 @@ impl Parapet
 
                                             // Ensure the protocol versions are compatible.
                                             if !pong.user_agent.is_compatible(&original_ping.user_agent) {
-                                                // proto_connection.connection.terminate("protocol versions are not compatible")?;
+                                                // pending_node.connection.terminate("protocol versions are not compatible")?;
 
                                                 // FIXME: Remove the connection.
                                                 unimplemented!();
                                             }
 
-                                            proto_connection.state = PendingState::PendingJoinRequest;
+                                            pending_node.state = PendingState::PendingJoinRequest;
                                         } else {
                                             return Err(Error::UnexpectedPacket { expected: "pong", received: packet })
                                         }
@@ -228,9 +228,9 @@ impl Parapet
                                 },
                                 PendingState::PendingJoinRequest  => (),
                                 PendingState::PendingJoinResponse => {
-                                    if let Some(packet) = proto_connection.connection.receive_packet()? {
+                                    if let Some(packet) = pending_node.connection.receive_packet()? {
                                         if let PacketKind::JoinResponse(join_response) = packet.kind {
-                                            proto_connection.state = PendingState::Complete { join_response: join_response };
+                                            pending_node.state = PendingState::Complete { join_response: join_response };
                                         } else {
                                             return Err(Error::UnexpectedPacket { expected: "join response", received: packet })
                                         }
@@ -241,7 +241,7 @@ impl Parapet
                                 },
                             }
                         },
-                        State::Connected { ref mut node, ref mut pending_connections } => {
+                        Node::Connected { ref mut node, ref mut pending_connections } => {
                             if !event.kind().is_readable() {
                                 continue;
                             }
@@ -287,7 +287,7 @@ impl Parapet
                                 next_hop.connection.as_mut().unwrap().send_packet(&packet)?;
                             }
                         },
-                        State::Unconnected => unreachable!(),
+                        Node::Unconnected => unreachable!(),
                     }
                 },
             }

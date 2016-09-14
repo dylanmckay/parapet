@@ -1,5 +1,5 @@
 use {Parapet, Error, PacketKind, job};
-use local::State;
+use local;
 
 use std::{io, thread};
 use std::sync::mpsc::channel;
@@ -116,7 +116,7 @@ impl Interactive
     }
 
     pub fn list(&self) {
-        if let State::Connected { ref node, .. } = self.0.state {
+        if let local::Node::Connected { ref node, .. } = self.0.node {
             let network = &node.network;
 
             for node in network.nodes() {
@@ -128,7 +128,7 @@ impl Interactive
     }
 
     pub fn run_command(&mut self, executable: &str, arguments: &[String]) {
-        if let State::Connected { ref mut node, .. } = self.0.state {
+        if let local::Node::Connected { ref mut node, .. } = self.0.node {
             let job = job::Job {
                 tasks: vec![job::Task::Run(job::Command {
                     executable: executable.to_owned(),
