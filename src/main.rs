@@ -20,6 +20,7 @@ pub use self::network::{Network, Node, Edge};
 pub use self::error::Error;
 pub use self::protocol::Packet;
 pub use self::path::Path;
+pub use self::interactive::Interactive;
 
 pub mod proto_connection;
 pub mod proto_node;
@@ -29,11 +30,13 @@ pub mod error;
 pub mod protocol;
 pub mod path;
 pub mod graphviz;
+pub mod interactive;
 
 use mio::tcp::*;
 use slab::Slab;
 
 use uuid::Uuid;
+use std::time::Duration;
 
 const SERVER_TOKEN: mio::Token = mio::Token(usize::max_value() - 10);
 const NEW_CONNECTION_TOKEN: mio::Token = mio::Token(usize::max_value() - 11);
@@ -216,108 +219,114 @@ impl Parapet
     }
 
     pub fn run(&mut self) -> Result<(), Error> {
+        loop {
+            self.tick()?;
+        }
+    }
+
+    pub fn tick(&mut self) -> Result<(), Error> {
         // Create storage for events
         let mut events = mio::Events::with_capacity(1024);
 
-        loop {
-            self.advance_new_connection_state()?;
-            self.poll.poll(&mut events, None).unwrap();
+        self.advance_new_connection_state()?;
+        self.poll.poll(&mut events, Some(Duration::from_millis(10))).unwrap();
 
-            for event in events.iter() {
-                match event.token() {
-                    // A pending connection.
-                    SERVER_TOKEN => {
-                        if let State::Connected { ref mut node, ref mut pending_connections } = self.state {
-                            let (socket, addr) = node.listener.as_mut().unwrap().accept()?;
+        for event in events.iter() {
+            match event.token() {
+                // A pending connection.
+                SERVER_TOKEN => {
+                    if let State::Connected { ref mut node, ref mut pending_connections } = self.state {
+                        let (socket, addr) = node.listener.as_mut().unwrap().accept()?;
 
-                            println!("accepted connection from {:?}", addr);
+                        println!("accepted connection from {:?}", addr);
 
-                            let entry = pending_connections.vacant_entry().expect("ran out of connections");
-                            let token = entry.index();
+                        let entry = pending_connections.vacant_entry().expect("ran out of connections");
+                        let token = entry.index();
 
-                            self.poll.register(&socket, token, mio::Ready::readable() | mio::Ready::writable(),
-                                mio::PollOpt::edge())?;
+                        self.poll.register(&socket, token, mio::Ready::readable() | mio::Ready::writable(),
+                            mio::PollOpt::edge())?;
 
-                            entry.insert(ProtoNode::new(Connection {
-                                token: token,
-                                protocol: proto::wire::stream::Connection::new(socket, proto::wire::middleware::pipeline::default()),
-                            }));
-                        } else {
-                            // We only start listening after we are successfully connected to the
-                            // network.
-                            unreachable!();
-                        }
-                    },
-                    token => {
-                        // TODO: check for `HUP` event.
+                        entry.insert(ProtoNode::new(Connection {
+                            token: token,
+                            protocol: proto::wire::stream::Connection::new(socket, proto::wire::middleware::pipeline::default()),
+                        }));
+                    } else {
+                        // We only start listening after we are successfully connected to the
+                        // network.
+                        unreachable!();
+                    }
+                },
+                token => {
+                    // TODO: check for `HUP` event.
 
-                        match self.state {
-                            State::Pending(ref mut proto_connection) => {
-                                assert_eq!(token, NEW_CONNECTION_TOKEN);
-                                if !event.kind().is_readable() {
-                                    continue;
-                                }
+                    match self.state {
+                        State::Pending(ref mut proto_connection) => {
+                            assert_eq!(token, NEW_CONNECTION_TOKEN);
+                            if !event.kind().is_readable() {
+                                continue;
+                            }
 
-                                match proto_connection.state.clone() {
-                                    ProtoState::PendingPing => (),
-                                    ProtoState::PendingPong { original_ping } => {
-                                        if let Some(packet) = proto_connection.connection.receive_packet().unwrap() {
-                                            if let Packet::Pong(pong) = packet {
-                                                println!("received pong");
+                            match proto_connection.state.clone() {
+                                ProtoState::PendingPing => (),
+                                ProtoState::PendingPong { original_ping } => {
+                                    if let Some(packet) = proto_connection.connection.receive_packet().unwrap() {
+                                        if let Packet::Pong(pong) = packet {
+                                            println!("received pong");
 
-                                                // Check if the echoed data is correct.
-                                                if pong.data != original_ping.data {
-                                                    return Err(Error::InvalidPong{
-                                                        expected: original_ping.data.clone(),
-                                                        received: pong.data,
-                                                    });
-                                                }
-
-                                                // Ensure the protocol versions are compatible.
-                                                if !pong.user_agent.is_compatible(&original_ping.user_agent) {
-                                                    // proto_connection.connection.terminate("protocol versions are not compatible")?;
-
-                                                    // FIXME: Remove the connection.
-                                                    unimplemented!();
-                                                }
-
-                                                proto_connection.state = ProtoState::PendingJoinRequest;
-                                            } else {
-                                                return Err(Error::UnexpectedPacket { expected: "pong", received: packet })
+                                            // Check if the echoed data is correct.
+                                            if pong.data != original_ping.data {
+                                                return Err(Error::InvalidPong{
+                                                    expected: original_ping.data.clone(),
+                                                    received: pong.data,
+                                                });
                                             }
+
+                                            // Ensure the protocol versions are compatible.
+                                            if !pong.user_agent.is_compatible(&original_ping.user_agent) {
+                                                // proto_connection.connection.terminate("protocol versions are not compatible")?;
+
+                                                // FIXME: Remove the connection.
+                                                unimplemented!();
+                                            }
+
+                                            proto_connection.state = ProtoState::PendingJoinRequest;
                                         } else {
-                                            // we haven't received a full packet yet.
+                                            return Err(Error::UnexpectedPacket { expected: "pong", received: packet })
                                         }
-                                    },
-                                    ProtoState::PendingJoinRequest  => (),
-                                    ProtoState::PendingJoinResponse => {
-                                        if let Some(packet) = proto_connection.connection.receive_packet()? {
-                                            if let Packet::JoinResponse(join_response) = packet {
-                                                proto_connection.state = ProtoState::Complete { join_response: join_response };
-                                            } else {
-                                                return Err(Error::UnexpectedPacket { expected: "join response", received: packet })
-                                            }
+                                    } else {
+                                        // we haven't received a full packet yet.
+                                    }
+                                },
+                                ProtoState::PendingJoinRequest  => (),
+                                ProtoState::PendingJoinResponse => {
+                                    if let Some(packet) = proto_connection.connection.receive_packet()? {
+                                        if let Packet::JoinResponse(join_response) = packet {
+                                            proto_connection.state = ProtoState::Complete { join_response: join_response };
+                                        } else {
+                                            return Err(Error::UnexpectedPacket { expected: "join response", received: packet })
                                         }
-                                    },
-                                    ProtoState::Complete { .. } => {
-                                        // nothing to do
-                                    },
-                                }
-                            },
-                            State::Connected { ref mut node, ref mut pending_connections } => {
-                                if !event.kind().is_readable() {
-                                    continue;
-                                }
+                                    }
+                                },
+                                ProtoState::Complete { .. } => {
+                                    // nothing to do
+                                },
+                            }
+                        },
+                        State::Connected { ref mut node, ref mut pending_connections } => {
+                            if !event.kind().is_readable() {
+                                continue;
+                            }
 
-                                let mut pending_connection = pending_connections.entry(token).unwrap();
-                                pending_connection.get_mut().process_incoming_data(node).unwrap();
-                            },
-                            State::Unconnected => unreachable!(),
-                        }
-                    },
-                }
+                            let mut pending_connection = pending_connections.entry(token).unwrap();
+                            pending_connection.get_mut().process_incoming_data(node).unwrap();
+                        },
+                        State::Unconnected => unreachable!(),
+                    }
+                },
             }
         }
+
+        Ok(())
     }
 
     fn mutate_state<F>(&mut self, mut f: F) -> Result<(), Error>
@@ -335,14 +344,19 @@ fn main() {
     use clap::{App, Arg};
 
     let matches = App::new("parapet")
-                      // .version("1.0")
-                      .author("Dylan <dylanmckay34@gmail.com>")
-                      .about("Peer-to-peer build system")
-                      .after_help(DESCRIPTION)
-                      .arg(Arg::with_name("address")
-                           .help("The address of an existing node on a network to connect to")
-                           .index(1))
-                      .get_matches();
+        // .version("1.0")
+        .author("Dylan <dylanmckay34@gmail.com>")
+        .about("Peer-to-peer build system")
+        .after_help(DESCRIPTION)
+        .arg(Arg::with_name("address")
+            .help("The address of an existing node on a network to connect to")
+            .index(1))
+        .arg(Arg::with_name("interactive")
+             .long("interactive")
+            .short("i")
+            .multiple(true)
+            .help("Enables the interactive console"))
+        .get_matches();
 
     let mut parapet = if let Some(address) = matches.value_of("address") {
         println!("connecting to existing network on {}", address);
@@ -355,6 +369,13 @@ fn main() {
         Parapet::new(SERVER_ADDRESS).unwrap()
     };
 
-    parapet.run().unwrap();
+    if matches.is_present("interactive") {
+        println!("starting interactive console");
+
+        let mut interactive = Interactive(parapet);
+        interactive.run().unwrap();
+    } else {
+        parapet.run().unwrap();
+    }
 }
 

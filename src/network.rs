@@ -6,12 +6,14 @@ use graphsearch;
 
 pub struct Weight(f32);
 
+#[derive(Debug)]
 pub struct Network
 {
     pub nodes: HashMap<Uuid, Node>,
     pub edges: Vec<Edge>,
 }
 
+#[derive(Debug)]
 pub struct Node
 {
     pub uuid: Uuid,
@@ -85,6 +87,10 @@ impl Network
         self.nodes.values_mut().find(|node| node.connection.as_ref().map_or(false, |c| c.token == token))
     }
 
+    pub fn nodes<'a>(&'a self) -> impl Iterator<Item=&'a Node> {
+        self.nodes.values()
+    }
+
     pub fn connect(&mut self, a: Uuid, b: Uuid) {
         let edge = Edge::new(a, b);
 
@@ -104,7 +110,6 @@ impl Network
     }
 
     pub fn set_connection(&mut self, uuid: &Uuid, connection: Connection) {
-        println!("set conn for {}", uuid);
         self.nodes.get_mut(uuid).unwrap().connection = Some(connection);
     }
 
