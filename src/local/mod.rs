@@ -1,4 +1,3 @@
-pub mod remote;
 pub mod pending;
 pub mod connected;
 

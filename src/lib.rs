@@ -29,6 +29,7 @@ pub mod graphviz;
 pub mod interactive;
 pub mod job;
 pub mod local;
+pub mod remote;
 pub mod pending_state;
 
 pub const SERVER_PORT: u16 = 53371;
