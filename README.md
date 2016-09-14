@@ -6,3 +6,17 @@
 
 Peer to peer build system.
 
+## Creating a new network
+
+You can create a new network by simply running
+
+```bash
+cargo run
+```
+
+## Connecting to an existing network
+
+```bash
+cargo run 127.0.0.1:53371
+```
+
