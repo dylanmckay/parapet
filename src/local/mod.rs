@@ -106,68 +106,45 @@ impl Parapet
 
     /// Attempts to advance the current state if possible.
     pub fn advance_new_connection_state(&mut self) -> Result<(), Error> {
-        self.mutate_state(|parapet, state|
-            if let State::Pending(mut proto_connection) = state {
-                match proto_connection.state.clone() {
-                    PendingState::PendingPing => {
-                        let ping = protocol::Ping {
-                            user_agent: user_agent(),
-                            // TODO: randomise this data
-                            data: vec![6, 2, 6, 1, 8, 8],
-                        };
+        let mut current_state = State::Unconnected;
+        std::mem::swap(&mut current_state, &mut self.state);
 
-                        println!("sending ping");
+        self.state = match current_state {
+            State::Pending(mut node) => {
+                node.advance_state()?;
 
-                        proto_connection.connection.send_packet(&Packet {
-                            // FIXME: come up with a proper path
-                            path: network::Path::empty(),
-                            kind: PacketKind::Ping(ping.clone()),
-                        })?;
-                        proto_connection.state = PendingState::PendingPong { original_ping: ping };
-
-                        Ok(State::Pending(proto_connection))
-                    },
-                    PendingState::PendingJoinRequest => {
-                        proto_connection.connection.send_packet(&Packet {
-                            path: network::Path::empty(),
-                            kind: PacketKind::JoinRequest(protocol::JoinRequest),
-                        })?;
-                        println!("advancing from pending join request");
-
-                        proto_connection.state = PendingState::PendingJoinResponse;
-                        Ok(State::Pending(proto_connection))
-                    },
-                    PendingState::Complete { join_response } => {
-                        let mut network: Network = join_response.network.into();
-                        let listener = match Parapet::bind(&mut parapet.poll, SERVER_ADDRESS) {
-                            Ok(listener) => Some(listener),
-                            Err(Error::Io(e)) => match e.kind() {
-                                std::io::ErrorKind::AddrInUse => {
-                                    println!("there is already something listening on port {} - we're not going to listen", SERVER_PORT);
-                                    None
-                                },
-                                _ => return Err(Error::Io(e)),
+                if let PendingState::Complete { join_response } = node.state.clone() {
+                    let listener = match Parapet::bind(&mut self.poll, SERVER_ADDRESS) {
+                        Ok(listener) => Some(listener),
+                        Err(Error::Io(e)) => match e.kind() {
+                            std::io::ErrorKind::AddrInUse => {
+                                println!("there is already something listening on port {} - we're not going to listen", SERVER_PORT);
+                                None
                             },
-                            Err(e) => return Err(e),
-                        };
+                            _ => return Err(Error::Io(e)),
+                        },
+                        Err(e) => return Err(e),
+                    };
 
-                        network.set_connection(&join_response.my_uuid, proto_connection.connection);
+                    let mut network: network::Network = join_response.network.into();
+                    network.set_connection(&join_response.my_uuid, node.connection);
 
-                        Ok(State::Connected {
-                            node: connected::Node {
-                                uuid: join_response.your_uuid,
-                                listener: listener,
-                                network: network,
-                            },
-                            pending_connections: Slab::with_capacity(1024),
-                        })
-                    },
-                    _ => Ok(State::Pending(proto_connection)), // we don't have to do anything.
+                    State::Connected {
+                        node: connected::Node {
+                            uuid: join_response.your_uuid,
+                            listener: listener,
+                            network: network,
+                        },
+                        pending_connections: Slab::with_capacity(1024),
+                    }
+                } else {
+                    State::Pending(node)
                 }
-            } else {
-                Ok(state)
-            }
-        )
+            },
+            state => state,
+        };
+
+        Ok(())
     }
 
     pub fn run(&mut self) -> Result<(), Error> {
@@ -315,16 +292,6 @@ impl Parapet
                 },
             }
         }
-
-        Ok(())
-    }
-
-    fn mutate_state<F>(&mut self, mut f: F) -> Result<(), Error>
-        where F: FnMut(&mut Self, State) -> Result<State, Error> {
-        let mut state = State::Unconnected;
-        std::mem::swap(&mut state, &mut self.state);
-
-        self.state = f(self, state)?;
 
         Ok(())
     }
