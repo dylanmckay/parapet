@@ -1,9 +1,10 @@
-use {State, Parapet, Error};
+use {State, Parapet, Error, PacketKind};
 
 use std::{io, thread};
 use std::sync::mpsc::channel;
 use std::io::Write;
 use std::sync::mpsc::TryRecvError;
+use protocol;
 
 pub struct Interactive(pub Parapet);
 
@@ -30,6 +31,12 @@ pub enum Command
 
     /// List the nodes in the network.
     List,
+
+    /// Run a command over the network.
+    Run {
+        executable: String,
+        arguments: Vec<String>
+    },
 }
 
 impl Interactive
@@ -55,12 +62,19 @@ impl Interactive
                     continue;
                 };
 
-                let _arguments: Vec<_> = words.collect();
+                let arguments: Vec<_> = words.collect();
 
                 match command.as_str() {
                     "exit" | "quit" | "q" => break,
                     "help" => tx.send(Message::Command(Command::Help)).unwrap(),
                     "list" => tx.send(Message::Command(Command::List)).unwrap(),
+                    "run" => {
+
+                        tx.send(Message::Command(Command::Run {
+                            executable: arguments[0].to_owned(),
+                            arguments: arguments[1..].iter().map(|s| s.to_string()).collect(),
+                        })).unwrap();
+                    },
                     _ => {
                         tx.send(Message::Command(Command::Unknown(command))).unwrap();
                         continue;
@@ -83,6 +97,7 @@ impl Interactive
                         Command::Help => self.help(),
                         Command::List => self.list(),
                         Command::Unknown(cmd) => println!("unknown command '{}'", cmd),
+                        Command::Run { executable, arguments }=> self.run_command(&executable, &arguments),
                     },
                 },
                 Err(TryRecvError::Empty) => (), // all good
@@ -106,6 +121,19 @@ impl Interactive
             for node in network.nodes() {
                 println!("{} - ({} siblings)", node.uuid, network.siblings(&node.uuid).len());
             }
+        } else {
+            println!("not yet connected to network");
+        }
+    }
+
+    pub fn run_command(&mut self, executable: &str, arguments: &[String]) {
+        if let State::Connected { ref mut node, .. } = self.0.state {
+            node.broadcast_packet(&PacketKind::JobRequest(protocol::JobRequest {
+                tasks: vec![protocol::Task::Run(protocol::job::Run {
+                    executable: executable.to_owned(),
+                    arguments: arguments.to_owned(),
+                })],
+            })).unwrap();
         } else {
             println!("not yet connected to network");
         }

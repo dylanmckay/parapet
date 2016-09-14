@@ -117,7 +117,7 @@ impl Network
         self.nodes.get_mut(uuid).unwrap().connection = Some(connection);
     }
 
-    pub fn route(&self, from: Uuid, to: Uuid) -> Path {
+    pub fn route(&self, from: &Uuid, to: &Uuid) -> Path {
         Path::new(self.shortest_path(from, to))
     }
 
@@ -136,12 +136,12 @@ impl Network
         graphsearch::Graph::new(raw_graph)
     }
 
-    pub fn shortest_path(&self, from: Uuid, to: Uuid) -> VecDeque<Uuid> {
+    pub fn shortest_path(&self, from: &Uuid, to: &Uuid) -> VecDeque<Uuid> {
         let graph = self.build_graph();
 
-        let from_idx = self.nodes.values().position(|node| node.uuid == from).unwrap();
+        let from_idx = self.nodes.values().position(|node| &node.uuid == from).unwrap();
 
-        graph.search(from_idx, to).unwrap().into_iter().map(|idx| {
+        graph.search(from_idx, to.clone()).unwrap().into_iter().map(|idx| {
             self.nodes.values().nth(idx).unwrap().uuid
         }).collect()
     }
