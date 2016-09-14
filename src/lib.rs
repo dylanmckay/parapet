@@ -12,7 +12,6 @@ extern crate dot;
 #[macro_use]
 extern crate protocol as proto;
 
-pub use self::proto_connection::{ProtoConnection, ProtoState};
 pub use self::connection::*;
 pub use self::network::Network;
 pub use self::error::Error;
@@ -21,7 +20,6 @@ pub use self::interactive::Interactive;
 pub use self::job::Job;
 pub use self::local::Parapet;
 
-pub mod proto_connection;
 pub mod connection;
 pub mod network;
 pub mod error;

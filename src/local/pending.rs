@@ -3,7 +3,7 @@ use protocol;
 
 /// A new connection which has not yet identified itself as a node.
 #[derive(Clone, Debug)]
-pub enum ProtoState
+pub enum State
 {
     /// We just connected and need to send a 'Ping'.
     PendingPing,
@@ -25,17 +25,17 @@ pub enum ProtoState
 }
 
 #[derive(Debug)]
-pub struct ProtoConnection
+pub struct Node
 {
-    pub state: ProtoState,
+    pub state: State,
     pub connection: Connection,
 }
 
-impl ProtoConnection
+impl Node
 {
     pub fn new(connection: Connection) -> Self {
-        ProtoConnection {
-            state: ProtoState::PendingPing,
+        Node {
+            state: State::PendingPing,
             connection: connection,
         }
     }
