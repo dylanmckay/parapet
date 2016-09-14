@@ -1,9 +1,11 @@
 pub use self::network::{Network, Node, Edge};
 pub use Path;
 pub use self::user_agent::UserAgent;
+pub use self::job::{JobRequest, Task};
 
 pub mod network;
 pub mod user_agent;
+pub mod job;
 
 use uuid::Uuid;
 
@@ -45,7 +47,8 @@ define_packet_kind!(PacketKind: u32 {
     0x01 => Pong,
     0x05 => Terminate,
     0x10 => JoinRequest,
-    0x11 => JoinResponse
+    0x11 => JoinResponse,
+    0x40 => JobRequest
 });
 
 impl Packet
