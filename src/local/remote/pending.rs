@@ -1,21 +1,39 @@
-use {Packet, PacketKind, Connection, Error};
+use {PendingState, Packet, PacketKind, Connection, Error};
 use network;
 use local;
 use protocol;
 
 use uuid::Uuid;
 
+
+#[derive(Debug)]
+pub struct RemotePendingNode
+{
+    pub state: PendingState,
+    pub connection: Connection,
+}
+
+impl RemotePendingNode
+{
+    pub fn new(connection: Connection) -> Self {
+        RemotePendingNode {
+            state: PendingState::PendingPing,
+            connection: connection,
+        }
+    }
+}
+
 /// A new node connecting to our current network.
 pub enum Node
 {
-    Pending(local::pending::Node),
+    Pending(RemotePendingNode),
     Completed
 }
 
 impl Node
 {
     pub fn new(connection: Connection) -> Self {
-        Node::Pending(local::pending::Node::new(connection))
+        Node::Pending(RemotePendingNode::new(connection))
     }
 
     pub fn process_incoming_data(&mut self, connected_node: &mut local::connected::Node) -> Result<(), Error> {
@@ -24,7 +42,7 @@ impl Node
 
         *self = if let Node::Pending(mut proto_connection) = tmp {
             match proto_connection.state.clone() {
-                local::pending::State::PendingPing => {
+                PendingState::PendingPing => {
                     if let Some(packet) = proto_connection.connection.receive_packet()? {
                         if let PacketKind::Ping(ping) = packet.kind {
                             println!("received ping, responding with pong");
@@ -39,7 +57,7 @@ impl Node
                                 kind: PacketKind::Pong(pong.clone()),
                             })?;
 
-                            proto_connection.state = local::pending::State::PendingJoinRequest;
+                            proto_connection.state = PendingState::PendingJoinRequest;
                         } else {
                             return Err(Error::UnexpectedPacket { expected: "ping", received: packet });
                         }
@@ -47,7 +65,7 @@ impl Node
 
                     Node::Pending(proto_connection)
                 },
-                local::pending::State::PendingJoinRequest => {
+                PendingState::PendingJoinRequest => {
                     if let Some(packet) = proto_connection.connection.receive_packet()? {
                         if let PacketKind::JoinRequest(..) = packet.kind {
                             let new_node_uuid = Uuid::new_v4();
@@ -74,7 +92,7 @@ impl Node
                                 kind: PacketKind::JoinResponse(join_response.clone()),
                             })?;
 
-                            proto_connection.state = local::pending::State::Complete { join_response: join_response };
+                            proto_connection.state = PendingState::Complete { join_response: join_response };
 
                             Node::Completed
                         } else {

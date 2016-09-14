@@ -2,6 +2,7 @@ pub mod remote;
 pub mod pending;
 pub mod connected;
 
+// FIXME: get rid of this
 use super::*;
 
 use mio;
@@ -109,7 +110,7 @@ impl Parapet
         self.mutate_state(|parapet, state|
             if let State::Pending(mut proto_connection) = state {
                 match proto_connection.state.clone() {
-                    pending::State::PendingPing => {
+                    PendingState::PendingPing => {
                         let ping = protocol::Ping {
                             user_agent: user_agent(),
                             // TODO: randomise this data
@@ -123,21 +124,21 @@ impl Parapet
                             path: network::Path::empty(),
                             kind: PacketKind::Ping(ping.clone()),
                         })?;
-                        proto_connection.state = pending::State::PendingPong { original_ping: ping };
+                        proto_connection.state = PendingState::PendingPong { original_ping: ping };
 
                         Ok(State::Pending(proto_connection))
                     },
-                    pending::State::PendingJoinRequest => {
+                    PendingState::PendingJoinRequest => {
                         proto_connection.connection.send_packet(&Packet {
                             path: network::Path::empty(),
                             kind: PacketKind::JoinRequest(protocol::JoinRequest),
                         })?;
                         println!("advancing from pending join request");
 
-                        proto_connection.state = pending::State::PendingJoinResponse;
+                        proto_connection.state = PendingState::PendingJoinResponse;
                         Ok(State::Pending(proto_connection))
                     },
-                    pending::State::Complete { join_response } => {
+                    PendingState::Complete { join_response } => {
                         let mut network: Network = join_response.network.into();
                         let listener = match Parapet::bind(&mut parapet.poll, SERVER_ADDRESS) {
                             Ok(listener) => Some(listener),
@@ -219,8 +220,8 @@ impl Parapet
                             }
 
                             match proto_connection.state.clone() {
-                                pending::State::PendingPing => (),
-                                pending::State::PendingPong { original_ping } => {
+                                PendingState::PendingPing => (),
+                                PendingState::PendingPong { original_ping } => {
                                     if let Some(packet) = proto_connection.connection.receive_packet().unwrap() {
                                         if let PacketKind::Pong(pong) = packet.kind {
                                             println!("received pong");
@@ -241,7 +242,7 @@ impl Parapet
                                                 unimplemented!();
                                             }
 
-                                            proto_connection.state = pending::State::PendingJoinRequest;
+                                            proto_connection.state = PendingState::PendingJoinRequest;
                                         } else {
                                             return Err(Error::UnexpectedPacket { expected: "pong", received: packet })
                                         }
@@ -249,17 +250,17 @@ impl Parapet
                                         // we haven't received a full packet yet.
                                     }
                                 },
-                                pending::State::PendingJoinRequest  => (),
-                                pending::State::PendingJoinResponse => {
+                                PendingState::PendingJoinRequest  => (),
+                                PendingState::PendingJoinResponse => {
                                     if let Some(packet) = proto_connection.connection.receive_packet()? {
                                         if let PacketKind::JoinResponse(join_response) = packet.kind {
-                                            proto_connection.state = pending::State::Complete { join_response: join_response };
+                                            proto_connection.state = PendingState::Complete { join_response: join_response };
                                         } else {
                                             return Err(Error::UnexpectedPacket { expected: "join response", received: packet })
                                         }
                                     }
                                 },
-                                pending::State::Complete { .. } => {
+                                PendingState::Complete { .. } => {
                                     // nothing to do
                                 },
                             }

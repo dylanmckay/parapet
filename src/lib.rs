@@ -19,6 +19,7 @@ pub use self::protocol::{Packet, PacketKind};
 pub use self::interactive::Interactive;
 pub use self::job::Job;
 pub use self::local::Parapet;
+pub use self::pending_state::PendingState;
 
 pub mod connection;
 pub mod network;
@@ -28,6 +29,7 @@ pub mod graphviz;
 pub mod interactive;
 pub mod job;
 pub mod local;
+pub mod pending_state;
 
 pub const SERVER_PORT: u16 = 53371;
 pub const SERVER_ADDRESS: (&'static str, u16) = ("127.0.0.1", SERVER_PORT);
