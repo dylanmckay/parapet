@@ -50,5 +50,55 @@ impl Node
 
         Ok(())
     }
+
+    pub fn process_incoming_data(&mut self) -> Result<(), Error> {
+        match self.state.clone() {
+            PendingState::PendingPing => (),
+            PendingState::PendingPong { original_ping } => {
+                if let Some(packet) = self.connection.receive_packet().unwrap() {
+                    if let PacketKind::Pong(pong) = packet.kind {
+                        println!("received pong");
+
+                        // Check if the echoed data is correct.
+                        if pong.data != original_ping.data {
+                            return Err(Error::InvalidPong{
+                                expected: original_ping.data.clone(),
+                                received: pong.data,
+                            });
+                        }
+
+                        // Ensure the protocol versions are compatible.
+                        if !pong.user_agent.is_compatible(&original_ping.user_agent) {
+                            // self.connection.terminate("protocol versions are not compatible")?;
+
+                            // FIXME: Remove the connection.
+                            unimplemented!();
+                        }
+
+                        self.state = PendingState::PendingJoinRequest;
+                    } else {
+                        return Err(Error::UnexpectedPacket { expected: "pong", received: packet })
+                    }
+                } else {
+                    // we haven't received a full packet yet.
+                }
+            },
+            PendingState::PendingJoinRequest  => (),
+            PendingState::PendingJoinResponse => {
+                if let Some(packet) = self.connection.receive_packet()? {
+                    if let PacketKind::JoinResponse(join_response) = packet.kind {
+                        self.state = PendingState::Complete { join_response: join_response };
+                    } else {
+                        return Err(Error::UnexpectedPacket { expected: "join response", received: packet })
+                    }
+                }
+            },
+            PendingState::Complete { .. } => {
+                // nothing to do
+            },
+        }
+
+        Ok(())
+    }
 }
 

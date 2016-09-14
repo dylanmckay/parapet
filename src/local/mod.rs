@@ -105,7 +105,7 @@ impl Parapet
     }
 
     /// Attempts to advance the current state if possible.
-    pub fn advance_new_connection_state(&mut self) -> Result<(), Error> {
+    pub fn try_complete_pending_connection(&mut self) -> Result<(), Error> {
         let mut current_node = Node::Unconnected;
         std::mem::swap(&mut current_node, &mut self.node);
 
@@ -157,7 +157,7 @@ impl Parapet
         // Create storage for events
         let mut events = mio::Events::with_capacity(1024);
 
-        self.advance_new_connection_state()?;
+        self.try_complete_pending_connection()?;
         self.poll.poll(&mut events, Some(Duration::from_millis(10))).unwrap();
 
         for event in events.iter() {
@@ -191,55 +191,12 @@ impl Parapet
                     match self.node {
                         Node::Pending(ref mut pending_node) => {
                             assert_eq!(token, NEW_CONNECTION_TOKEN);
+
                             if !event.kind().is_readable() {
                                 continue;
                             }
 
-                            match pending_node.state.clone() {
-                                PendingState::PendingPing => (),
-                                PendingState::PendingPong { original_ping } => {
-                                    if let Some(packet) = pending_node.connection.receive_packet().unwrap() {
-                                        if let PacketKind::Pong(pong) = packet.kind {
-                                            println!("received pong");
-
-                                            // Check if the echoed data is correct.
-                                            if pong.data != original_ping.data {
-                                                return Err(Error::InvalidPong{
-                                                    expected: original_ping.data.clone(),
-                                                    received: pong.data,
-                                                });
-                                            }
-
-                                            // Ensure the protocol versions are compatible.
-                                            if !pong.user_agent.is_compatible(&original_ping.user_agent) {
-                                                // pending_node.connection.terminate("protocol versions are not compatible")?;
-
-                                                // FIXME: Remove the connection.
-                                                unimplemented!();
-                                            }
-
-                                            pending_node.state = PendingState::PendingJoinRequest;
-                                        } else {
-                                            return Err(Error::UnexpectedPacket { expected: "pong", received: packet })
-                                        }
-                                    } else {
-                                        // we haven't received a full packet yet.
-                                    }
-                                },
-                                PendingState::PendingJoinRequest  => (),
-                                PendingState::PendingJoinResponse => {
-                                    if let Some(packet) = pending_node.connection.receive_packet()? {
-                                        if let PacketKind::JoinResponse(join_response) = packet.kind {
-                                            pending_node.state = PendingState::Complete { join_response: join_response };
-                                        } else {
-                                            return Err(Error::UnexpectedPacket { expected: "join response", received: packet })
-                                        }
-                                    }
-                                },
-                                PendingState::Complete { .. } => {
-                                    // nothing to do
-                                },
-                            }
+                            pending_node.process_incoming_data()?;
                         },
                         Node::Connected { ref mut node, ref mut pending_connections } => {
                             if !event.kind().is_readable() {
