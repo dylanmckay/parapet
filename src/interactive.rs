@@ -1,4 +1,5 @@
-use {State, Parapet, Error, PacketKind, job};
+use {Parapet, Error, PacketKind, job};
+use local::State;
 
 use std::{io, thread};
 use std::sync::mpsc::channel;

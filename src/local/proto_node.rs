@@ -1,4 +1,5 @@
-use {Packet, PacketKind, Connection, ProtoConnection, ProtoState, Error, ConnectedNode, Node, Path};
+use {Packet, PacketKind, Connection, ProtoConnection, ProtoState, Error, Node, Path};
+use local::ConnectedNode;
 use protocol;
 
 use uuid::Uuid;
