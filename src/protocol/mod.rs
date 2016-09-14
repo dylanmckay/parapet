@@ -48,3 +48,11 @@ define_packet_kind!(PacketKind: u32 {
     0x11 => JoinResponse
 });
 
+impl Packet
+{
+    /// Checks if the packet is intended for a node.
+    pub fn is_recipient(&self, uuid: &Uuid) -> bool {
+        self.path.ends_at(uuid)
+    }
+}
+

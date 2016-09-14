@@ -117,6 +117,10 @@ impl Network
         self.nodes.get_mut(uuid).unwrap().connection = Some(connection);
     }
 
+    pub fn route(&self, from: Uuid, to: Uuid) -> Path {
+        Path::new(self.shortest_path(from, to))
+    }
+
     pub fn build_graph(&self) -> graphsearch::Graph<Uuid> {
         let raw_graph: Vec<_> = self.nodes.values().map(|node| {
             graphsearch::Node {

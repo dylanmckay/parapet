@@ -322,8 +322,31 @@ impl Parapet
                                 continue;
                             }
 
-                            let mut pending_connection = pending_connections.entry(token).unwrap();
-                            pending_connection.get_mut().process_incoming_data(node).unwrap();
+                            let packet = if let Some(mut pending_connection) = pending_connections.entry(token) {
+                                pending_connection.get_mut().process_incoming_data(node).unwrap();
+                                continue;
+                            } else if let Some(from_node) = node.network.lookup_token_mut(token) {
+                                // we received a packet from an established node
+
+                                if let Some(packet) = from_node.connection.as_mut().unwrap().receive_packet()? {
+                                    packet
+                                } else {
+                                    continue;
+                                }
+                            } else {
+                                unreachable!();
+                            };
+
+                            // Check if the packet is for us.
+                            if packet.is_recipient(&node.uuid) {
+                                println!("we got a packet");
+                            } else {
+                                // we need to forward this packet to the recipient
+                                let next_hop_uuid = packet.path.next_hop(&node.uuid).unwrap();
+                                let next_hop = node.network.get_mut(&next_hop_uuid).unwrap();
+
+                                next_hop.connection.as_mut().unwrap().send_packet(&packet)?;
+                            }
                         },
                         State::Unconnected => unreachable!(),
                     }
