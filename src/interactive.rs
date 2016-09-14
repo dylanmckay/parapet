@@ -1,4 +1,4 @@
-use {State, Parapet, Error, PacketKind};
+use {State, Parapet, Error, PacketKind, job};
 
 use std::{io, thread};
 use std::sync::mpsc::channel;
@@ -128,12 +128,14 @@ impl Interactive
 
     pub fn run_command(&mut self, executable: &str, arguments: &[String]) {
         if let State::Connected { ref mut node, .. } = self.0.state {
-            node.broadcast_packet(&PacketKind::JobRequest(protocol::JobRequest {
-                tasks: vec![protocol::Task::Run(protocol::job::Run {
+            let job = job::Job {
+                tasks: vec![job::Task::Run(job::Command {
                     executable: executable.to_owned(),
                     arguments: arguments.to_owned(),
                 })],
-            })).unwrap();
+            };
+
+            node.broadcast_packet(&PacketKind::JobRequest(protocol::JobRequest::from_job(&job))).unwrap();
         } else {
             println!("not yet connected to network");
         }

@@ -20,6 +20,7 @@ pub use self::network::{Network, Node, Edge, Path};
 pub use self::error::Error;
 pub use self::protocol::{Packet, PacketKind};
 pub use self::interactive::Interactive;
+pub use self::job::Job;
 
 pub mod proto_connection;
 pub mod proto_node;
@@ -29,6 +30,7 @@ pub mod error;
 pub mod protocol;
 pub mod graphviz;
 pub mod interactive;
+pub mod job;
 
 use mio::tcp::*;
 use slab::Slab;
