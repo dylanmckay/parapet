@@ -1,5 +1,5 @@
 use {Packet, PacketKind, Connection, ProtoConnection, ProtoState, Error, Node, Path};
-use local::ConnectedNode;
+use local;
 use protocol;
 
 use uuid::Uuid;
@@ -17,7 +17,7 @@ impl ProtoNode
         ProtoNode::Pending(ProtoConnection::new(connection))
     }
 
-    pub fn process_incoming_data(&mut self, connected_node: &mut ConnectedNode) -> Result<(), Error> {
+    pub fn process_incoming_data(&mut self, connected_node: &mut local::connected::Node) -> Result<(), Error> {
         let mut tmp = ProtoNode::Completed;
         ::std::mem::swap(&mut tmp, self);
 

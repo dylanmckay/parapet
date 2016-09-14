@@ -1,6 +1,7 @@
 pub use self::proto_node::ProtoNode;
 
 pub mod proto_node;
+pub mod connected;
 
 use super::*;
 
@@ -17,15 +18,6 @@ use proto;
 const SERVER_TOKEN: mio::Token = mio::Token(usize::max_value() - 10);
 const NEW_CONNECTION_TOKEN: mio::Token = mio::Token(usize::max_value() - 11);
 
-pub struct ConnectedNode
-{
-    pub uuid: Uuid,
-    pub listener: Option<TcpListener>,
-
-    /// The network we are apart of.
-    pub network: Network,
-}
-
 // Flow:
 //
 // Client sends 'JoinRequest' to some node
@@ -38,7 +30,7 @@ pub enum State
     Pending(ProtoConnection),
     /// We are now a connected node in the network.
     Connected {
-        node: ConnectedNode,
+        node: connected::Node,
 
         pending_connections: Slab<ProtoNode, mio::Token>,
     },
@@ -64,7 +56,7 @@ impl Parapet
 
         Ok(Parapet {
             state: State::Connected {
-                node: ConnectedNode {
+                node: connected::Node {
                     uuid: uuid,
                     listener: Some(listener),
                     network: Network::new(uuid),
@@ -163,7 +155,7 @@ impl Parapet
                         network.set_connection(&join_response.my_uuid, proto_connection.connection);
 
                         Ok(State::Connected {
-                            node: ConnectedNode {
+                            node: connected::Node {
                                 uuid: join_response.your_uuid,
                                 listener: listener,
                                 network: network,
@@ -324,29 +316,3 @@ impl Parapet
     }
 }
 
-impl ConnectedNode
-{
-    pub fn send_packet_to(&mut self, to: &Uuid, packet: &PacketKind) -> Result<(), Error> {
-        let packet = Packet {
-            path: self.network.route(&self.uuid, to),
-            kind: packet.clone(),
-        };
-
-        let first_hop_uuid = packet.path.next_hop(&self.uuid).unwrap();
-        let first_hop = self.network.get_mut(&first_hop_uuid).unwrap();
-        first_hop.connection.as_mut().unwrap().send_packet(&packet)
-    }
-
-    pub fn broadcast_packet(&mut self, packet: &PacketKind) -> Result<(), Error> {
-        let destination_uuids: Vec<_> = self.network.nodes()
-            .filter(|node| node.uuid == self.uuid)
-            .map(|node| node.uuid.clone())
-            .collect();
-
-        for destination_uuid in destination_uuids {
-            self.send_packet_to(&destination_uuid, packet)?;
-        }
-
-        Ok(())
-    }
-}
