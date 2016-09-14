@@ -8,7 +8,6 @@ extern crate slab;
 extern crate uuid;
 extern crate byteorder;
 extern crate graphsearch;
-extern crate clap;
 extern crate dot;
 #[macro_use]
 extern crate protocol as proto;
@@ -38,22 +37,17 @@ use slab::Slab;
 use uuid::Uuid;
 use std::time::Duration;
 
+pub const SERVER_PORT: u16 = 53371;
+pub const SERVER_ADDRESS: (&'static str, u16) = ("127.0.0.1", SERVER_PORT);
+
+pub const CLIENT_NAME: &'static str = "vanilla";
+pub const CLIENT_VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
+pub const PROTOCOL_MAJOR: u16 = 0;
+pub const PROTOCOL_REVISION: u16 = 0;
+
 const SERVER_TOKEN: mio::Token = mio::Token(usize::max_value() - 10);
 const NEW_CONNECTION_TOKEN: mio::Token = mio::Token(usize::max_value() - 11);
-
-const SERVER_PORT: u16 = 53371;
-const SERVER_ADDRESS: (&'static str, u16) = ("127.0.0.1", SERVER_PORT);
-
-const CLIENT_NAME: &'static str = "vanilla";
-const CLIENT_VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
-const PROTOCOL_MAJOR: u16 = 0;
-const PROTOCOL_REVISION: u16 = 0;
-
-const DESCRIPTION: &'static str = "
-    If you pass an address, it will connect to an existing node on
-    some network, otherwise a new network will be created.
-";
 
 fn user_agent() -> protocol::UserAgent {
     protocol::UserAgent {
@@ -394,45 +388,6 @@ impl ConnectedNode
         }
 
         Ok(())
-    }
-}
-
-fn main() {
-    use clap::{App, Arg};
-
-    let matches = App::new("parapet")
-        // .version("1.0")
-        .author("Dylan <dylanmckay34@gmail.com>")
-        .about("Peer-to-peer build system")
-        .after_help(DESCRIPTION)
-        .arg(Arg::with_name("address")
-            .help("The address of an existing node on a network to connect to")
-            .index(1))
-        .arg(Arg::with_name("interactive")
-             .long("interactive")
-            .short("i")
-            .multiple(true)
-            .help("Enables the interactive console"))
-        .get_matches();
-
-    let mut parapet = if let Some(address) = matches.value_of("address") {
-        println!("connecting to existing network on {}", address);
-
-        Parapet::connect(address).unwrap()
-    } else {
-        println!("running new network on {}:{}", SERVER_ADDRESS.0, SERVER_ADDRESS.1);
-
-        // Create a new network.
-        Parapet::new(SERVER_ADDRESS).unwrap()
-    };
-
-    if matches.is_present("interactive") {
-        println!("starting interactive console");
-
-        let mut interactive = Interactive(parapet);
-        interactive.run().unwrap();
-    } else {
-        parapet.run().unwrap();
     }
 }
 
