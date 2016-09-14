@@ -1,4 +1,4 @@
-use {Packet, Error};
+use {Packet, PacketKind, Error, Path};
 use mio::tcp::*;
 use proto;
 use protocol;
@@ -28,9 +28,13 @@ impl Connection
     /// Terminate the connection with a reason.
     pub fn terminate<S>(mut self, reason: S) -> Result<(), Error>
         where S: Into<String> {
-        self.protocol.send_packet(&Packet::Terminate(protocol::Terminate{
-            reason: reason.into(),
-        }))?;
+        self.protocol.send_packet(&Packet {
+            // FIXME: come up with a proper path
+            path: Path::empty(),
+            kind: PacketKind::Terminate(protocol::Terminate {
+                reason: reason.into(),
+            }),
+        })?;
 
         // Connection is dropped when connection goes out of scope
 

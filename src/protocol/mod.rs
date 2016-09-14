@@ -1,4 +1,5 @@
 pub use self::network::{Network, Node, Edge};
+pub use Path;
 pub use self::user_agent::UserAgent;
 
 pub mod network;
@@ -33,8 +34,13 @@ define_packet!(JoinResponse {
     network: Network
 });
 
+define_packet!(Packet {
+    path: Path,
+    kind: PacketKind
+});
+
 // Defines a packet kind enum.
-define_packet_kind!(Packet: u32 {
+define_packet_kind!(PacketKind: u32 {
     0x00 => Ping,
     0x01 => Pong,
     0x05 => Terminate,

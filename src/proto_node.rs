@@ -1,4 +1,4 @@
-use {Packet, Connection, ProtoConnection, ProtoState, Error, ConnectedNode, Node};
+use {Packet, PacketKind, Connection, ProtoConnection, ProtoState, Error, ConnectedNode, Node, Path};
 use protocol;
 
 use uuid::Uuid;
@@ -24,7 +24,7 @@ impl ProtoNode
             match proto_connection.state.clone() {
                 ProtoState::PendingPing => {
                     if let Some(packet) = proto_connection.connection.receive_packet()? {
-                        if let Packet::Ping(ping) = packet {
+                        if let PacketKind::Ping(ping) = packet.kind {
                             println!("received ping, responding with pong");
 
                             let pong = protocol::Pong {
@@ -32,7 +32,11 @@ impl ProtoNode
                                 data: ping.data.clone(),
                             };
 
-                            proto_connection.connection.send_packet(&Packet::Pong(pong.clone()))?;
+                            proto_connection.connection.send_packet(&Packet {
+                                // FIXME: come up with a proper path
+                                path: Path::empty(),
+                                kind: PacketKind::Pong(pong.clone()),
+                            })?;
 
                             proto_connection.state = ProtoState::PendingJoinRequest;
                         } else {
@@ -44,7 +48,7 @@ impl ProtoNode
                 },
                 ProtoState::PendingJoinRequest => {
                     if let Some(packet) = proto_connection.connection.receive_packet()? {
-                        if let Packet::JoinRequest(..) = packet {
+                        if let PacketKind::JoinRequest(..) = packet.kind {
                             let new_node_uuid = Uuid::new_v4();
 
                             connected_node.network.insert(Node {
@@ -64,7 +68,11 @@ impl ProtoNode
                             };
 
                             let mut new_node = connected_node.network.get_mut(&new_node_uuid).unwrap();
-                            new_node.connection.as_mut().unwrap().send_packet(&Packet::JoinResponse(join_response.clone()))?;
+                            new_node.connection.as_mut().unwrap().send_packet(&Packet {
+                                // FIXME: come up with a proper path.
+                                path: Path::empty(),
+                                kind: PacketKind::JoinResponse(join_response.clone()),
+                            })?;
 
                             proto_connection.state = ProtoState::Complete { join_response: join_response };
 

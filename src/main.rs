@@ -18,7 +18,7 @@ pub use self::proto_node::ProtoNode;
 pub use self::connection::*;
 pub use self::network::{Network, Node, Edge};
 pub use self::error::Error;
-pub use self::protocol::Packet;
+pub use self::protocol::{Packet, PacketKind};
 pub use self::path::Path;
 pub use self::interactive::Interactive;
 
@@ -173,13 +173,20 @@ impl Parapet
 
                         println!("sending ping");
 
-                        proto_connection.connection.send_packet(&Packet::Ping(ping.clone()))?;
+                        proto_connection.connection.send_packet(&Packet {
+                            // FIXME: come up with a proper path
+                            path: Path::empty(),
+                            kind: PacketKind::Ping(ping.clone()),
+                        })?;
                         proto_connection.state = ProtoState::PendingPong { original_ping: ping };
 
                         Ok(State::Pending(proto_connection))
                     },
                     ProtoState::PendingJoinRequest => {
-                        proto_connection.connection.send_packet(&Packet::JoinRequest(protocol::JoinRequest))?;
+                        proto_connection.connection.send_packet(&Packet {
+                            path: Path::empty(),
+                            kind: PacketKind::JoinRequest(protocol::JoinRequest),
+                        })?;
                         println!("advancing from pending join request");
 
                         proto_connection.state = ProtoState::PendingJoinResponse;
@@ -270,7 +277,7 @@ impl Parapet
                                 ProtoState::PendingPing => (),
                                 ProtoState::PendingPong { original_ping } => {
                                     if let Some(packet) = proto_connection.connection.receive_packet().unwrap() {
-                                        if let Packet::Pong(pong) = packet {
+                                        if let PacketKind::Pong(pong) = packet.kind {
                                             println!("received pong");
 
                                             // Check if the echoed data is correct.
@@ -300,7 +307,7 @@ impl Parapet
                                 ProtoState::PendingJoinRequest  => (),
                                 ProtoState::PendingJoinResponse => {
                                     if let Some(packet) = proto_connection.connection.receive_packet()? {
-                                        if let Packet::JoinResponse(join_response) = packet {
+                                        if let PacketKind::JoinResponse(join_response) = packet.kind {
                                             proto_connection.state = ProtoState::Complete { join_response: join_response };
                                         } else {
                                             return Err(Error::UnexpectedPacket { expected: "join response", received: packet })
