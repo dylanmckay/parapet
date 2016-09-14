@@ -14,7 +14,7 @@ extern crate protocol as proto;
 
 pub use self::proto_connection::{ProtoConnection, ProtoState};
 pub use self::connection::*;
-pub use self::network::{Network, Node, Edge, Path};
+pub use self::network::Network;
 pub use self::error::Error;
 pub use self::protocol::{Packet, PacketKind};
 pub use self::interactive::Interactive;

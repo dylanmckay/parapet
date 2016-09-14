@@ -1,6 +1,4 @@
-pub use self::proto_node::ProtoNode;
-
-pub mod proto_node;
+pub mod remote;
 pub mod connected;
 
 use super::*;
@@ -32,7 +30,7 @@ pub enum State
     Connected {
         node: connected::Node,
 
-        pending_connections: Slab<ProtoNode, mio::Token>,
+        pending_connections: Slab<remote::pending::Node, mio::Token>,
     },
 }
 
@@ -121,7 +119,7 @@ impl Parapet
 
                         proto_connection.connection.send_packet(&Packet {
                             // FIXME: come up with a proper path
-                            path: Path::empty(),
+                            path: network::Path::empty(),
                             kind: PacketKind::Ping(ping.clone()),
                         })?;
                         proto_connection.state = ProtoState::PendingPong { original_ping: ping };
@@ -130,7 +128,7 @@ impl Parapet
                     },
                     ProtoState::PendingJoinRequest => {
                         proto_connection.connection.send_packet(&Packet {
-                            path: Path::empty(),
+                            path: network::Path::empty(),
                             kind: PacketKind::JoinRequest(protocol::JoinRequest),
                         })?;
                         println!("advancing from pending join request");
@@ -199,7 +197,7 @@ impl Parapet
                         self.poll.register(&socket, token, mio::Ready::readable() | mio::Ready::writable(),
                             mio::PollOpt::edge())?;
 
-                        entry.insert(ProtoNode::new(Connection {
+                        entry.insert(remote::pending::Node::new(Connection {
                             token: token,
                             protocol: proto::wire::stream::Connection::new(socket, proto::wire::middleware::pipeline::default()),
                         }));

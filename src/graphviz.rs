@@ -1,4 +1,4 @@
-use {Network, Edge};
+use network::{Network, Edge};
 use std::borrow::Cow;
 
 use uuid::Uuid;

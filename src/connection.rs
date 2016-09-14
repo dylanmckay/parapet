@@ -1,7 +1,9 @@
-use {Packet, PacketKind, Error, Path};
-use mio::tcp::*;
-use proto;
+use {Packet, PacketKind, Error};
+use network;
 use protocol;
+
+use proto;
+use mio::tcp::*;
 
 #[derive(Debug)]
 pub struct Connection
@@ -29,8 +31,7 @@ impl Connection
     pub fn terminate<S>(mut self, reason: S) -> Result<(), Error>
         where S: Into<String> {
         self.protocol.send_packet(&Packet {
-            // FIXME: come up with a proper path
-            path: Path::empty(),
+            path: network::Path::empty(),
             kind: PacketKind::Terminate(protocol::Terminate {
                 reason: reason.into(),
             }),

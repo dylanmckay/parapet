@@ -1,5 +1,4 @@
 pub use self::network::{Network, Node, Edge};
-pub use Path;
 pub use self::user_agent::UserAgent;
 pub use self::job::{JobRequest, Task};
 
@@ -7,6 +6,7 @@ pub mod network;
 pub mod user_agent;
 pub mod job;
 
+use network::Path;
 use uuid::Uuid;
 
 // Ping a node with some information.

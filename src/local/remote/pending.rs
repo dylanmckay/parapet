@@ -1,27 +1,28 @@
-use {Packet, PacketKind, Connection, ProtoConnection, ProtoState, Error, Node, Path};
+use {Packet, PacketKind, Connection, ProtoConnection, ProtoState, Error};
+use network;
 use local;
 use protocol;
 
 use uuid::Uuid;
 
 /// A new node connecting to our current network.
-pub enum ProtoNode
+pub enum Node
 {
     Pending(ProtoConnection),
     Completed
 }
 
-impl ProtoNode
+impl Node
 {
     pub fn new(connection: Connection) -> Self {
-        ProtoNode::Pending(ProtoConnection::new(connection))
+        Node::Pending(ProtoConnection::new(connection))
     }
 
     pub fn process_incoming_data(&mut self, connected_node: &mut local::connected::Node) -> Result<(), Error> {
-        let mut tmp = ProtoNode::Completed;
+        let mut tmp = Node::Completed;
         ::std::mem::swap(&mut tmp, self);
 
-        *self = if let ProtoNode::Pending(mut proto_connection) = tmp {
+        *self = if let Node::Pending(mut proto_connection) = tmp {
             match proto_connection.state.clone() {
                 ProtoState::PendingPing => {
                     if let Some(packet) = proto_connection.connection.receive_packet()? {
@@ -34,8 +35,7 @@ impl ProtoNode
                             };
 
                             proto_connection.connection.send_packet(&Packet {
-                                // FIXME: come up with a proper path
-                                path: Path::empty(),
+                                path: network::Path::empty(),
                                 kind: PacketKind::Pong(pong.clone()),
                             })?;
 
@@ -45,14 +45,14 @@ impl ProtoNode
                         }
                     }
 
-                    ProtoNode::Pending(proto_connection)
+                    Node::Pending(proto_connection)
                 },
                 ProtoState::PendingJoinRequest => {
                     if let Some(packet) = proto_connection.connection.receive_packet()? {
                         if let PacketKind::JoinRequest(..) = packet.kind {
                             let new_node_uuid = Uuid::new_v4();
 
-                            connected_node.network.insert(Node {
+                            connected_node.network.insert(network::Node {
                                 uuid: new_node_uuid.clone(),
                                 connection: Some(proto_connection.connection),
                             });
@@ -70,25 +70,24 @@ impl ProtoNode
 
                             let mut new_node = connected_node.network.get_mut(&new_node_uuid).unwrap();
                             new_node.connection.as_mut().unwrap().send_packet(&Packet {
-                                // FIXME: come up with a proper path.
-                                path: Path::empty(),
+                                path: network::Path::empty(),
                                 kind: PacketKind::JoinResponse(join_response.clone()),
                             })?;
 
                             proto_connection.state = ProtoState::Complete { join_response: join_response };
 
-                            ProtoNode::Completed
+                            Node::Completed
                         } else {
                             return Err(Error::UnexpectedPacket { expected: "join request", received: packet });
                         }
                     } else {
-                        ProtoNode::Pending(proto_connection)
+                        Node::Pending(proto_connection)
                     }
                 },
-                _ => ProtoNode::Pending(proto_connection),
+                _ => Node::Pending(proto_connection),
             }
         } else {
-            ProtoNode::Completed
+            Node::Completed
         };
 
         Ok(())
