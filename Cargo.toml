@@ -1,6 +1,6 @@
 [package]
 name = "parapet"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
 
 description = "Peer to peer build system"
@@ -9,10 +9,10 @@ repository = "https://github.com/dylanmckay/parapet"
 
 [dependencies]
 mio = "0.6"
-slab = "0.3.0"
-uuid = { version = "0.3.1", features = ["v4", "serde"] }
-byteorder = "0.5.3"
-graphsearch = "0.6.0"
+slab = "0.3"
+uuid = { version = "0.3", features = ["v4", "serde"] }
+byteorder = "0.5"
+graphsearch = "0.6"
 protocol = { version = "0.1.9", features = ["uuid"] }
 clap = "2.11"
 dot = "0.1"
