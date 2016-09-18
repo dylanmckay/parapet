@@ -4,7 +4,7 @@ use uuid::Uuid;
 use std::fmt;
 
 /// A path through the network.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Path
 {
     pub hops: VecDeque<Uuid>,

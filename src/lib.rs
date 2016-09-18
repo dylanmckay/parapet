@@ -23,6 +23,7 @@ pub use self::error::Error;
 pub use self::protocol::{Packet, PacketKind};
 pub use self::job::Job;
 pub use self::pending_state::PendingState;
+pub use self::builder::Builder;
 
 pub mod parapet;
 pub mod interactive;
@@ -32,6 +33,7 @@ pub mod error;
 pub mod protocol;
 pub mod job;
 pub mod pending_state;
+pub mod builder;
 
 pub mod graphviz;
 pub mod local;

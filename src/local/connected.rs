@@ -1,5 +1,5 @@
-use {Network, Packet, PacketKind, PendingState, Error};
-use {remote, network};
+use {Network, Packet, PacketKind, PendingState, Builder, Error};
+use {remote, network, protocol};
 
 use uuid::Uuid;
 use mio::tcp::*;
@@ -12,6 +12,8 @@ pub struct Node
 
     /// The network we are apart of.
     pub network: Network,
+
+    pub builder: Builder,
 }
 
 impl Node
@@ -24,11 +26,7 @@ impl Node
             kind: packet.clone(),
         };
 
-        println!("route: {:?}", packet.path);
-
-        println!("my uuid: {}", self.uuid);
         let first_hop_uuid = packet.path.next_hop(&self.uuid).expect("cannot find thing");
-        println!("first hop: {:?}", first_hop_uuid);
         let first_hop = self.network.get_mut(&first_hop_uuid).expect("can't find first hop from uuid");
         first_hop.connection.as_mut().unwrap().send_packet(&packet)
     }
@@ -56,6 +54,22 @@ impl Node
             self.network.connect(&self.uuid, &join_response.your_uuid);
         } else {
             unreachable!();
+        }
+
+        Ok(())
+    }
+
+    pub fn tick(&mut self) -> Result<(), Error> {
+        self.builder.tick();
+
+        let completed_jobs: Vec<_> = self.builder.completed_jobs().collect();
+        for job in completed_jobs {
+            let response = PacketKind::JobResponse(protocol::JobResponse {
+                uuid: job.output.job.uuid,
+                tasks: job.output.task_outputs.into_iter().map(|a| protocol::job::TaskOutput::from_task_output(&a)).collect(),
+            });
+
+            self.send_packet_to(&job.origin, &response)?;
         }
 
         Ok(())

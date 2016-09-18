@@ -1,7 +1,11 @@
+pub mod run;
+
+use uuid::Uuid;
 
 #[derive(Clone, Debug)]
 pub struct Job
 {
+    pub uuid: Uuid,
     pub tasks: Vec<Task>,
 }
 

@@ -7,6 +7,8 @@ use std::io::Write;
 use std::sync::mpsc::TryRecvError;
 use protocol;
 
+use uuid::Uuid;
+
 pub struct Interactive(pub Parapet);
 
 #[derive(Clone, Debug)]
@@ -144,6 +146,7 @@ impl Interactive
     pub fn run_command(&mut self, executable: &str, arguments: &[String]) {
         if let local::Node::Connected { ref mut node, .. } = self.0.node {
             let job = job::Job {
+                uuid: Uuid::new_v4(),
                 tasks: vec![job::Task::Run(job::Command {
                     executable: executable.to_owned(),
                     arguments: arguments.to_owned(),

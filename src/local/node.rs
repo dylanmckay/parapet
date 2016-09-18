@@ -1,4 +1,4 @@
-use {Error, Connection, PendingState};
+use {Error, Connection, PendingState, Builder};
 use {local, remote, network};
 
 use slab::Slab;
@@ -31,6 +31,10 @@ impl Node
 
         self.try_complete_pending_connection(poll)?;
         poll.poll(&mut events, Some(Duration::from_millis(10))).unwrap();
+
+        if let Node::Connected { ref mut node, .. } = *self {
+            node.tick()?;
+        }
 
         for event in events.iter() {
             match event.token() {
@@ -113,7 +117,7 @@ impl Node
 
                             // Check if the packet is for us.
                             if packet.is_recipient(&node.uuid) {
-                                println!("we got a packet");
+                                local::handle::packet(node, &packet);
                             } else {
                                 // we need to forward this packet to the recipient
                                 let next_hop_uuid = packet.path.next_hop(&node.uuid).unwrap();
@@ -172,6 +176,7 @@ impl Node
                             uuid: join_response.your_uuid,
                             listener: listener,
                             network: network,
+                            builder: Builder::new(),
                         },
                         pending_connections: Slab::with_capacity(1024),
                     }

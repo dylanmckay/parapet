@@ -1,4 +1,4 @@
-use {Error, Network, Connection};
+use {Error, Network, Connection, Builder};
 use local;
 
 use mio;
@@ -33,6 +33,7 @@ impl Parapet
                     uuid: uuid,
                     listener: Some(listener),
                     network: Network::new(uuid),
+                    builder: Builder::new(),
                 },
                 pending_connections: Slab::with_capacity(1024),
             },
