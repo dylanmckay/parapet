@@ -17,6 +17,31 @@ pub struct Network
     pub edges: Vec<Edge>,
 }
 
+pub struct Entry<'a>
+{
+    uuid: Uuid,
+    network: &'a mut Network,
+}
+
+impl<'a> Entry<'a>
+{
+    pub fn remove(mut self) -> Node {
+        self.network.edges = self.network.edges.iter().cloned().filter(|edge| {
+            !edge.connected_to(&self.uuid)
+        }).collect();
+
+        self.network.nodes.remove(&self.uuid).unwrap()
+    }
+
+    pub fn get(&self) -> &Node {
+        self.network.nodes.get(&self.uuid).unwrap()
+    }
+
+    pub fn get_mut(&mut self) -> &mut Node {
+        self.network.nodes.get_mut(&self.uuid).unwrap()
+    }
+}
+
 #[derive(Debug)]
 pub struct Node
 {
@@ -89,6 +114,16 @@ impl Network
 
     pub fn lookup_token_mut(&mut self, token: ::mio::Token) -> Option<&mut Node> {
         self.nodes.values_mut().find(|node| node.connection.as_ref().map_or(false, |c| c.token == token))
+    }
+
+    pub fn entry_by_token(&mut self, token: ::mio::Token) -> Option<Entry> {
+        let uuid = self.nodes.values().find(|node| node.connection.as_ref().map_or(false, |c| c.token == token)).map(|n| n.uuid.clone());
+
+        if let Some(uuid) = uuid {
+            Some(Entry { uuid: uuid, network: self })
+        } else {
+            None
+        }
     }
 
     pub fn nodes<'a>(&'a self) -> impl Iterator<Item=&'a Node> {

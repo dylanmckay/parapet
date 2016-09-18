@@ -64,7 +64,10 @@ impl Node
                         local::Node::Pending(ref mut pending_node) => {
                             assert_eq!(token, NEW_CONNECTION_TOKEN);
 
-                            if !event.kind().is_readable() {
+                            if event.kind().is_hup() {
+                                println!("remote node disconnected before we could join");
+                                return Ok(());
+                            } else if !event.kind().is_readable() {
                                 continue;
                             }
 
@@ -76,18 +79,31 @@ impl Node
                             }
 
                             let packet = if let Some(mut pending_connection) = pending_connections.entry(token) {
-                                pending_connection.get_mut().process_incoming_data(node)?;
+                                if event.kind().is_hup() {
+                                    println!("pending remote connection disconnected");
+                                    pending_connection.remove();
+                                } else if event.kind().is_readable() {
+                                    pending_connection.get_mut().process_incoming_data(node)?;
 
-                                if pending_connection.get().is_complete() {
-                                    node.promote_pending_connection_to_node(pending_connection.remove()).unwrap();
+                                    if pending_connection.get().is_complete() {
+                                        node.promote_pending_connection_to_node(pending_connection.remove()).unwrap();
+                                    }
                                 }
 
                                 continue;
-                            } else if let Some(from_node) = node.network.lookup_token_mut(token) {
+                            } else if let Some(mut from_node) = node.network.entry_by_token(token) {
                                 // we received a packet from an established node
 
-                                if let Some(packet) = from_node.connection.as_mut().unwrap().receive_packet()? {
-                                    packet
+                                if event.kind().is_hup() {
+                                    println!("node {} disconnected", from_node.get().uuid);
+                                    from_node.remove();
+                                    continue;
+                                } else if event.kind().is_readable() {
+                                    if let Some(packet) = from_node.get_mut().connection.as_mut().unwrap().receive_packet()? {
+                                        packet
+                                    } else {
+                                        continue;
+                                    }
                                 } else {
                                     continue;
                                 }
