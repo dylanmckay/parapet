@@ -17,6 +17,9 @@ protocol = { version = "0.1.9", features = ["uuid"] }
 clap = "2.11"
 dot = "0.1"
 
+[dev-dependencies]
+stainless = "*"
+
 [[bin]]
 name = "node"
 path = "tools/node.rs"

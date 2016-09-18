@@ -78,21 +78,11 @@ impl Node
                             let packet = if let Some(mut pending_connection) = pending_connections.entry(token) {
                                 pending_connection.get_mut().process_incoming_data(node)?;
 
-                                let pending_connection = if pending_connection.get().is_complete() {
-                                    pending_connection.remove()
-                                } else {
-                                    continue;
-                                };
-
-                                if let PendingState::Complete { ref join_response } = pending_connection.state {
-                                    node.network.insert(network::Node {
-                                        uuid: join_response.your_uuid.clone(),
-                                        connection: Some(pending_connection.connection),
-                                    });
-                                    continue;
-                                } else {
-                                    continue;
+                                if pending_connection.get().is_complete() {
+                                    node.promote_pending_connection_to_node(pending_connection.remove()).unwrap();
                                 }
+
+                                continue;
                             } else if let Some(from_node) = node.network.lookup_token_mut(token) {
                                 // we received a packet from an established node
 
@@ -149,6 +139,17 @@ impl Node
 
                     let mut network: network::Network = join_response.network.into();
                     network.set_connection(&join_response.my_uuid, node.connection);
+
+                    // Add ourselves to the network.
+                    network.insert(network::Node {
+                        uuid: join_response.your_uuid,
+                        connection: None,
+                    });
+
+                    // Connect ourselves and the node we're communicating with.
+                    network.connect(&join_response.your_uuid, &join_response.my_uuid);
+
+                    println!("connected to network with UUID {}", join_response.your_uuid);
 
                     local::Node::Connected {
                         node: local::connected::Node {

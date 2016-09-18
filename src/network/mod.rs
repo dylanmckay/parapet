@@ -52,7 +52,7 @@ impl Edge
     }
 
     pub fn other_node(&self, uuid: &Uuid) -> Option<&Uuid> {
-        vec![&self.a, &self.b].into_iter().filter(|a| a == &uuid).next()
+        vec![&self.a, &self.b].into_iter().filter(|a| a != &uuid).next()
     }
 }
 
@@ -95,8 +95,8 @@ impl Network
         self.nodes.values()
     }
 
-    pub fn connect(&mut self, a: Uuid, b: Uuid) {
-        let edge = Edge::new(a, b);
+    pub fn connect(&mut self, a: &Uuid, b: &Uuid) {
+        let edge = Edge::new(a.clone(), b.clone());
 
         if self.edges.iter().find(|&e| e == &edge).is_none() {
             self.edges.push(edge);
@@ -137,13 +137,14 @@ impl Network
     }
 
     pub fn shortest_path(&self, from: &Uuid, to: &Uuid) -> VecDeque<Uuid> {
+        println!("route from {} to {}", from, to);
         let graph = self.build_graph();
 
         let from_idx = self.nodes.values().position(|node| &node.uuid == from).unwrap();
 
-        graph.search(from_idx, to.clone()).unwrap().into_iter().map(|idx| {
+        graph.search(from_idx, to.clone()).expect("no route exists").into_iter().map(|idx| {
             self.nodes.values().nth(idx).unwrap().uuid
-        }).collect()
+        }).rev().collect()
     }
 }
 

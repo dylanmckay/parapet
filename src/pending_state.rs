@@ -23,3 +23,10 @@ pub enum PendingState
     },
 }
 
+impl PendingState
+{
+    pub fn is_complete(&self) -> bool {
+        if let PendingState::Complete { .. } = *self { true } else { false }
+    }
+}
+

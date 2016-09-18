@@ -57,7 +57,6 @@ impl Node
                         println!("received join request, responding (assigning UUID {})", new_node_uuid);
 
                         let network = protocol::Network::from_network(&connected_node.network);
-                        println!("describe: {:?}", network);
 
                         let join_response = protocol::JoinResponse {
                             your_uuid: new_node_uuid,
