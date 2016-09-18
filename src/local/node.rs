@@ -34,6 +34,11 @@ impl Node
 
         if let Node::Connected { ref mut node, .. } = *self {
             node.tick()?;
+
+            // If we've been orphaned, and we aren't listening locally.
+            if !node.is_listening() && node.network.node_count() == 1 {
+                return Err(Error::Stop { reason: "local node has stopped, and we aren't bound to local port, so we are orphaned" })
+            }
         }
 
         for event in events.iter() {
@@ -101,6 +106,7 @@ impl Node
                                 if event.kind().is_hup() {
                                     println!("node {} disconnected", from_node.get().uuid);
                                     from_node.remove();
+
                                     continue;
                                 } else if event.kind().is_readable() {
                                     if let Some(packet) = from_node.get_mut().connection.as_mut().unwrap().receive_packet()? {

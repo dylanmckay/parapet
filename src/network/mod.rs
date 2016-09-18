@@ -112,6 +112,10 @@ impl Network
         self.nodes.get_mut(uuid)
     }
 
+    pub fn node_count(&self) -> usize {
+        self.nodes.len()
+    }
+
     pub fn lookup_token_mut(&mut self, token: ::mio::Token) -> Option<&mut Node> {
         self.nodes.values_mut().find(|node| node.connection.as_ref().map_or(false, |c| c.token == token))
     }

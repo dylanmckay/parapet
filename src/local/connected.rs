@@ -74,4 +74,6 @@ impl Node
 
         Ok(())
     }
+
+    pub fn is_listening(&self) -> bool { self.listener.is_some() }
 }

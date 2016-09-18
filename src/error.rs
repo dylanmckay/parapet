@@ -5,6 +5,9 @@ use proto;
 #[derive(Debug)]
 pub enum Error
 {
+    /// Gently stop the node.
+    Stop { reason: &'static str },
+
     UnexpectedPacket { expected: &'static str, received: Packet },
     InvalidPong { expected: Vec<u8>, received: Vec<u8> },
 

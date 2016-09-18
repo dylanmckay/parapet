@@ -67,8 +67,17 @@ impl Parapet
 
     pub fn run(&mut self) -> Result<(), Error> {
         loop {
-            self.tick()?;
+            match self.tick() {
+                Ok(..) => (),
+                Err(Error::Stop { reason }) => {
+                    println!("stopping: {}", reason);
+                    break;
+                },
+                e => return e,
+            }
         }
+
+        Ok(())
     }
 
     pub fn tick(&mut self) -> Result<(), Error> {

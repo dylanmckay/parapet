@@ -116,7 +116,14 @@ impl Interactive
                 Err(TryRecvError::Disconnected) => break,
             }
 
-            self.0.tick()?;
+            match self.0.tick() {
+                Ok(..) => (),
+                Err(Error::Stop { reason }) => {
+                    println!("stopping: {}", reason);
+                    break;
+                },
+                e => return e,
+            }
         }
 
         Ok(())
