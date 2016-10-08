@@ -23,7 +23,7 @@ impl Workspace for Basic
 {
     fn run(&mut self, command: job::Command) -> job::run::TaskOutput {
         if !self.directory.exists() {
-            fs::create_dir(&self.directory).expect("could not create workspace directory");
+            fs::create_dir_all(&self.directory).expect("could not create workspace directory");
         }
 
         let output = process::Command::new(&command.executable)
