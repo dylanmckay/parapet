@@ -12,6 +12,7 @@ extern crate uuid;
 extern crate byteorder;
 extern crate graphsearch;
 extern crate dot;
+extern crate gaol;
 #[macro_use]
 extern crate protocol as proto;
 
@@ -24,6 +25,7 @@ pub use self::protocol::{Packet, PacketKind};
 pub use self::job::Job;
 pub use self::pending_state::PendingState;
 pub use self::builder::Builder;
+pub use self::slave::Slave;
 
 pub mod parapet;
 pub mod interactive;
@@ -34,6 +36,7 @@ pub mod protocol;
 pub mod job;
 pub mod pending_state;
 pub mod builder;
+pub mod slave;
 
 pub mod graphviz;
 pub mod local;

@@ -5,6 +5,7 @@ dependencies = [
  "byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "dot 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gaol 0.0.1 (git+https://github.com/servo/gaol.git)",
  "graphsearch 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "mio 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "protocol 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -65,6 +66,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "libz-sys 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "gaol"
+version = "0.0.1"
+source = "git+https://github.com/servo/gaol.git#c67de2fb4469bfc4f5258602ec30579844edafec"
+dependencies = [
+ "libc 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -286,6 +297,7 @@ dependencies = [
 "checksum clap 2.12.1 (registry+https://github.com/rust-lang/crates.io-index)" = "bbc90fa76af314f6e1d09fb3e739d145b25e0f8630a108ade30a3b58569b7b90"
 "checksum dot 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6bad61973e929901dfd6f78054501325546c979692543150055e77e52191a0eb"
 "checksum flate2 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)" = "3eeb481e957304178d2e782f2da1257f1434dfecbae883bafb61ada2a9fea3bb"
+"checksum gaol 0.0.1 (git+https://github.com/servo/gaol.git)" = "<none>"
 "checksum gcc 0.3.35 (registry+https://github.com/rust-lang/crates.io-index)" = "91ecd03771effb0c968fd6950b37e89476a578aaf1c70297d8e92b6516ec3312"
 "checksum graphsearch 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c4615d74fc3b2ec2efe7398b7b24aa9f4fa1d24425320eb0de7d67a1f8fa63bd"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"

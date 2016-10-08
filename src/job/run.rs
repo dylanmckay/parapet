@@ -51,18 +51,24 @@ pub fn task(task: job::Task) -> TaskOutput
 {
     match task.clone() {
         job::Task::Run(command) => {
-            let output = process::Command::new(&command.executable)
-                .args(&command.arguments)
-                .output()
-                .expect("could not spawn command");
+            use slave::Slave;
+            // let output = process::Command::new(&command.executable)
+            //     .args(&command.arguments)
+            //     .output()
+            //     .expect("could not spawn command");
+
+            let mut slave = ::slave::Gaol;
+            slave.run(command);
 
             TaskOutput {
                 task: task,
-                output: output.stdout,
-                result_code: match output.status.code() {
-                    Some(code) => code as _,
-                    None => 0,
-                },
+                // output: output.stdout,
+                output: Vec::new(),
+                result_code: 0,
+                // result_code: match output.status.code() {
+                //     Some(code) => code as _,
+                //     None => 0,
+                // },
             }
         },
     }
