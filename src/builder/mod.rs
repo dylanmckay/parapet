@@ -5,22 +5,17 @@ use uuid::Uuid;
 use std::collections::{HashMap, VecDeque};
 use std::sync::mpsc;
 
+pub mod running;
+
 pub struct Builder
 {
     tx: mpsc::Sender<job::run::JobOutput>,
     rx: mpsc::Receiver<job::run::JobOutput>,
 
-    pending_jobs: HashMap<Uuid, PendingJob>,
+    running_jobs: HashMap<Uuid, running::Job>,
     completed_jobs: VecDeque<CompletedJob>,
 
     strategy: Box<workspace::Strategy>,
-}
-
-pub struct PendingJob
-{
-    /// The UUID of the node that is requesting the job.
-    pub origin: Uuid,
-    pub job: job::Job,
 }
 
 pub struct CompletedJob
@@ -38,7 +33,7 @@ impl Builder
         Builder {
             tx: tx,
             rx: rx,
-            pending_jobs: HashMap::new(),
+            running_jobs: HashMap::new(),
             completed_jobs: VecDeque::new(),
             strategy: strategy,
         }
@@ -47,9 +42,9 @@ impl Builder
     pub fn build(&mut self, origin: Uuid, job: job::Job) {
         let tx = self.tx.clone();
 
-        let pending_job = PendingJob { origin: origin, job: job.clone() };
+        let pending_job = running::Job { origin: origin, job: job.clone() };
 
-        self.pending_jobs.insert(job.uuid, pending_job);
+        self.running_jobs.insert(job.uuid, pending_job);
 
         let workspace = self.strategy.create_workspace("nameless-job");
         job::run::job(job, workspace, tx);
@@ -59,7 +54,7 @@ impl Builder
         loop {
             match self.rx.try_recv() {
                 Ok(output) => {
-                    let pending_job = self.pending_jobs.remove(&output.job.uuid).unwrap();
+                    let pending_job = self.running_jobs.remove(&output.job.uuid).unwrap();
 
                     println!("job complete: {:?}", output);
 
