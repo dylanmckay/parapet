@@ -6,8 +6,8 @@ pub mod basic;
 
 use job;
 
-/// A slave which can be used to execute commands in.
-pub trait Slave
+/// A workspace to run commands in.
+pub trait Workspace
 {
     fn run(&mut self, job::Command) -> job::run::TaskOutput;
 }

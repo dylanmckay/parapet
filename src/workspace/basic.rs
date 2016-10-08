@@ -1,4 +1,4 @@
-use Slave;
+use Workspace;
 use job;
 
 use std::path::PathBuf;
@@ -18,7 +18,7 @@ impl Basic
     }
 }
 
-impl Slave for Basic
+impl Workspace for Basic
 {
     fn run(&mut self, command: job::Command) -> job::run::TaskOutput {
         let output = process::Command::new(&command.executable)

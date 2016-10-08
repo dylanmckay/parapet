@@ -1,4 +1,4 @@
-use Slave;
+use Workspace;
 use job;
 
 use gaol::profile::{AddressPattern, Operation, OperationSupport, OperationSupportLevel};
@@ -31,7 +31,7 @@ fn profile() -> Profile {
 
 pub struct Gaol;
 
-impl Slave for Gaol
+impl Workspace for Gaol
 {
     fn run(&mut self, command: job::Command) -> job::run::TaskOutput {
         let mut cmd = Command::new(command.executable);

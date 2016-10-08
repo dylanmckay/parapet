@@ -56,10 +56,10 @@ pub fn task(task: job::Task) -> TaskResult
 {
     match task.clone() {
         job::Task::Run(command) => {
-            use slave::Slave;
+            use Workspace;
 
-            let mut slave = ::slave::Basic::new("/tmp/foo");
-            let task_output = slave.run(command);
+            let mut workspace = ::workspace::Basic::new("/tmp/foo");
+            let task_output = workspace.run(command);
 
             TaskResult {
                 task: task,
