@@ -20,16 +20,29 @@ fn main() {
             .help("The address of an existing node on a network to connect to")
             .index(1))
         .arg(Arg::with_name("interactive")
-             .long("interactive")
+            .long("interactive")
             .short("i")
             .multiple(true)
             .help("Enables the interactive console"))
+        .arg(Arg::with_name("local")
+            .long("local")
+            .short("l")
+            .help("Connect to an existing node running locally on the default port"))
         .get_matches();
 
-    let mut parapet = if let Some(address) = matches.value_of("address") {
+    let address: Option<String> = if let Some(address) = matches.value_of("address") {
+        Some(address.to_string())
+    } else if matches.is_present("local") {
+        // Connect to a existing local node.
+        Some(format!("{}:{}", pp::SERVER_ADDRESS.0, pp::SERVER_ADDRESS.1))
+    } else {
+        None
+    };
+
+    let mut parapet = if let Some(address) = address {
         println!("connecting to existing network on {}", address);
 
-        Parapet::connect(address).unwrap()
+        Parapet::connect(&*address).unwrap()
     } else {
         println!("running new network on {}:{}", pp::SERVER_ADDRESS.0, pp::SERVER_ADDRESS.1);
 

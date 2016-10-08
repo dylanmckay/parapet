@@ -32,14 +32,21 @@ impl Workspace for Basic
             .output()
             .expect("could not spawn command");
 
-        job::run::TaskOutput {
+        let output = job::run::TaskOutput {
             // FIXME: grab stderr
             output: output.stdout,
             result_code: match output.status.code() {
                 Some(code) => code as _,
                 None => 0,
             },
+        };
+
+        if fs::read_dir(&self.directory).unwrap().next().is_none() {
+            // No point in persisting an empty directory.
+            fs::remove_dir(&self.directory).unwrap();
         }
+
+        output
     }
 }
 
