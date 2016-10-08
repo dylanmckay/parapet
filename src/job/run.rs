@@ -3,19 +3,24 @@ use job;
 
 use std::thread;
 use std::sync::mpsc;
-use std::process;
 
 #[derive(Clone, Debug)]
-pub struct Output
+pub struct JobOutput
 {
     pub job: Job,
-    pub task_outputs: Vec<TaskOutput>,
+    pub task_results: Vec<TaskResult>,
+}
+
+#[derive(Clone, Debug)]
+pub struct TaskResult
+{
+    pub task: job::Task,
+    pub output: TaskOutput,
 }
 
 #[derive(Clone, Debug)]
 pub struct TaskOutput
 {
-    pub task: job::Task,
     pub output: Vec<u8>,
     pub result_code: i64,
 }
@@ -27,48 +32,38 @@ impl TaskOutput
     }
 }
 
-pub fn job(job: Job, sender: mpsc::Sender<Output>) {
+pub fn job(job: Job, sender: mpsc::Sender<JobOutput>) {
     thread::spawn(move || {
-        let mut outputs = Vec::new();
+        let mut results = Vec::new();
 
         for task in job.tasks.iter() {
-            let output = self::task(task.clone());
-            outputs.push(output.clone());
+            let result = self::task(task.clone());
+            results.push(result.clone());
 
-            if !output.is_successful() { break };
+            if !result.output.is_successful() { break };
         }
 
-        let job_output = Output {
+        let job_output = JobOutput {
             job: job,
-            task_outputs: outputs,
+            task_results: results,
         };
 
         sender.send(job_output).ok();
     });
 }
 
-pub fn task(task: job::Task) -> TaskOutput
+pub fn task(task: job::Task) -> TaskResult
 {
     match task.clone() {
         job::Task::Run(command) => {
             use slave::Slave;
-            // let output = process::Command::new(&command.executable)
-            //     .args(&command.arguments)
-            //     .output()
-            //     .expect("could not spawn command");
 
-            let mut slave = ::slave::Gaol;
-            slave.run(command);
+            let mut slave = ::slave::Basic::new("/tmp/foo");
+            let task_output = slave.run(command);
 
-            TaskOutput {
+            TaskResult {
                 task: task,
-                // output: output.stdout,
-                output: Vec::new(),
-                result_code: 0,
-                // result_code: match output.status.code() {
-                //     Some(code) => code as _,
-                //     None => 0,
-                // },
+                output: task_output,
             }
         },
     }

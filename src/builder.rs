@@ -6,8 +6,8 @@ use std::sync::mpsc;
 
 pub struct Builder
 {
-    tx: mpsc::Sender<job::run::Output>,
-    rx: mpsc::Receiver<job::run::Output>,
+    tx: mpsc::Sender<job::run::JobOutput>,
+    rx: mpsc::Receiver<job::run::JobOutput>,
 
     pending_jobs: HashMap<Uuid, PendingJob>,
     completed_jobs: VecDeque<CompletedJob>,
@@ -24,7 +24,7 @@ pub struct CompletedJob
 {
     /// The UUID of the node that is requesting the job.
     pub origin: Uuid,
-    pub output: job::run::Output,
+    pub output: job::run::JobOutput,
 }
 
 impl Builder

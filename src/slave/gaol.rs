@@ -33,10 +33,11 @@ pub struct Gaol;
 
 impl Slave for Gaol
 {
-    fn run(&mut self, command: job::Command) {
+    fn run(&mut self, command: job::Command) -> job::run::TaskOutput {
         let mut cmd = Command::new(command.executable);
         cmd.args(&command.arguments);
         Sandbox::new(profile()).start(&mut cmd).unwrap().wait().unwrap();
+        unimplemented!();
     }
 }
 

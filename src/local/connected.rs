@@ -66,7 +66,7 @@ impl Node
         for job in completed_jobs {
             let response = PacketKind::JobResponse(protocol::JobResponse {
                 uuid: job.output.job.uuid,
-                tasks: job.output.task_outputs.into_iter().map(|a| protocol::job::TaskOutput::from_task_output(&a)).collect(),
+                tasks: job.output.task_results.into_iter().map(|a| protocol::job::TaskResult::from_task_result(&a)).collect(),
             });
 
             self.send_packet_to(&job.origin, &response)?;

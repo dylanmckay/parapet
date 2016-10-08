@@ -11,7 +11,7 @@ define_packet_kind!(Task: u8 {
     0x00 => Run
 });
 
-define_composite_type!(TaskOutput {
+define_composite_type!(TaskResult {
     task: Task,
     output: Vec<u8>,
     result_code: i64
@@ -24,7 +24,7 @@ define_packet!(JobRequest {
 
 define_packet!(JobResponse {
     uuid: Uuid,
-    tasks: Vec<TaskOutput>
+    tasks: Vec<TaskResult>
 });
 
 impl JobRequest
@@ -46,13 +46,13 @@ impl Task
     }
 }
 
-impl TaskOutput
+impl TaskResult
 {
-    pub fn from_task_output(task_output: &job::run::TaskOutput) -> Self {
-        TaskOutput {
-            task: Task::from_task(&task_output.task),
-            output: task_output.output.clone(),
-            result_code: task_output.result_code,
+    pub fn from_task_result(task_result: &job::run::TaskResult) -> Self {
+        TaskResult {
+            task: Task::from_task(&task_result.task),
+            output: task_result.output.output.clone(),
+            result_code: task_result.output.result_code,
         }
     }
 }
