@@ -1,5 +1,6 @@
 use {Error, Network, Connection, Builder};
 use local;
+use workspace;
 
 use mio;
 use mio::tcp::*;
@@ -27,13 +28,17 @@ impl Parapet
 
         println!("assigning UUID {}", uuid);
 
+        let builder = Builder::new(Box::new(
+            workspace::strategy::InDirectory::<workspace::Basic>::new("parapet-cache"))
+        );
+
         Ok(Parapet {
             node: local::Node::Connected {
                 node: local::connected::Node {
                     uuid: uuid,
                     listener: Some(listener),
                     network: Network::new(uuid),
-                    builder: Builder::new(),
+                    builder: builder,
                 },
                 pending_connections: Slab::with_capacity(1024),
             },

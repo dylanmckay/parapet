@@ -1,4 +1,6 @@
 use Job;
+use Workspace;
+
 use job;
 
 use std::thread;
@@ -32,12 +34,12 @@ impl TaskOutput
     }
 }
 
-pub fn job(job: Job, sender: mpsc::Sender<JobOutput>) {
+pub fn job(job: Job, mut workspace: Box<Workspace>, sender: mpsc::Sender<JobOutput>) {
     thread::spawn(move || {
         let mut results = Vec::new();
 
         for task in job.tasks.iter() {
-            let result = self::task(task.clone());
+            let result = self::task(task.clone(), &mut workspace);
             results.push(result.clone());
 
             if !result.output.is_successful() { break };
@@ -52,13 +54,10 @@ pub fn job(job: Job, sender: mpsc::Sender<JobOutput>) {
     });
 }
 
-pub fn task(task: job::Task) -> TaskResult
+pub fn task(task: job::Task, workspace: &mut Box<Workspace>) -> TaskResult
 {
     match task.clone() {
         job::Task::Run(command) => {
-            use Workspace;
-
-            let mut workspace = ::workspace::Basic::new("/tmp/foo");
             let task_output = workspace.run(command);
 
             TaskResult {

@@ -1,4 +1,5 @@
-use job;
+use {job, workspace};
+
 use uuid::Uuid;
 
 use std::collections::{HashMap, VecDeque};
@@ -11,6 +12,8 @@ pub struct Builder
 
     pending_jobs: HashMap<Uuid, PendingJob>,
     completed_jobs: VecDeque<CompletedJob>,
+
+    strategy: Box<workspace::Strategy>,
 }
 
 pub struct PendingJob
@@ -29,7 +32,7 @@ pub struct CompletedJob
 
 impl Builder
 {
-    pub fn new() -> Self {
+    pub fn new(strategy: Box<workspace::Strategy>) -> Self {
         let (tx, rx) = mpsc::channel();
 
         Builder {
@@ -37,6 +40,7 @@ impl Builder
             rx: rx,
             pending_jobs: HashMap::new(),
             completed_jobs: VecDeque::new(),
+            strategy: strategy,
         }
     }
 
@@ -46,7 +50,9 @@ impl Builder
         let pending_job = PendingJob { origin: origin, job: job.clone() };
 
         self.pending_jobs.insert(job.uuid, pending_job);
-        job::run::job(job, tx);
+
+        let workspace = self.strategy.create_workspace("nameless-job");
+        job::run::job(job, workspace, tx);
     }
 
     pub fn tick(&mut self) {

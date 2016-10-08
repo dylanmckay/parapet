@@ -1,5 +1,5 @@
 use {Error, Connection, PendingState, Builder};
-use {local, remote, network};
+use {local, remote, network, workspace};
 
 use slab::Slab;
 use proto;
@@ -177,12 +177,17 @@ impl Node
 
                     println!("connected to network with UUID {}", join_response.your_uuid);
 
+                    let builder = Builder::new(Box::new(
+                        workspace::strategy::InDirectory::<workspace::Basic>::new("parapet-cache"))
+                    );
+
+
                     local::Node::Connected {
                         node: local::connected::Node {
                             uuid: join_response.your_uuid,
                             listener: listener,
                             network: network,
-                            builder: Builder::new(),
+                            builder: builder,
                         },
                         pending_connections: Slab::with_capacity(1024),
                     }

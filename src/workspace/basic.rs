@@ -1,8 +1,9 @@
 use Workspace;
+use workspace;
 use job;
 
 use std::path::PathBuf;
-use std::process;
+use std::{process, fs};
 
 pub struct Basic {
     directory: PathBuf,
@@ -21,8 +22,13 @@ impl Basic
 impl Workspace for Basic
 {
     fn run(&mut self, command: job::Command) -> job::run::TaskOutput {
+        if !self.directory.exists() {
+            fs::create_dir(&self.directory).expect("could not create workspace directory");
+        }
+
         let output = process::Command::new(&command.executable)
             .args(&command.arguments)
+            .current_dir(&self.directory)
             .output()
             .expect("could not spawn command");
 
@@ -34,6 +40,13 @@ impl Workspace for Basic
                 None => 0,
             },
         }
+    }
+}
+
+impl workspace::DirectoryBased for Basic
+{
+    fn from_directory(directory: PathBuf) -> Self {
+        Basic::new(directory)
     }
 }
 
