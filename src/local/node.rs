@@ -178,7 +178,7 @@ impl Node
                     println!("connected to network with UUID {}", join_response.your_uuid);
 
                     let builder = Builder::new(Box::new(
-                        workspace::strategy::InDirectory::<workspace::Basic>::new("parapet-cache"))
+                        workspace::strategy::InDirectory::<workspace::basic::Basic>::new("parapet-cache"))
                     );
 
 

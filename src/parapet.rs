@@ -29,7 +29,7 @@ impl Parapet
         println!("assigning UUID {}", uuid);
 
         let builder = Builder::new(Box::new(
-            workspace::strategy::InDirectory::<workspace::Basic>::new("parapet-cache"))
+            workspace::strategy::InDirectory::<workspace::basic::Basic>::new("parapet-cache"))
         );
 
         Ok(Parapet {
