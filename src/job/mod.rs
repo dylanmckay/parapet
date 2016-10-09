@@ -10,9 +10,10 @@ pub struct Job
 }
 
 #[derive(Clone, Debug)]
-pub enum Task
+pub struct Task
 {
-    Run(Command),
+    pub uuid: Uuid,
+    pub command: Command,
 }
 
 #[derive(Clone, Debug)]

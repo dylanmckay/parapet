@@ -1,4 +1,4 @@
-use {Error, Connection, PendingState, Builder};
+use {Error, Connection, PendingState, Builder, Dispatcher};
 use {local, remote, network, workspace};
 
 use slab::Slab;
@@ -188,6 +188,7 @@ impl Node
                             listener: listener,
                             network: network,
                             builder: builder,
+                            dispatcher: Dispatcher::new(),
                         },
                         pending_connections: Slab::with_capacity(1024),
                     }

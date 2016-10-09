@@ -2,13 +2,14 @@ use job;
 
 use uuid::Uuid;
 
-define_composite_type!(Run {
-    executable: String,
-    arguments: Vec<String>
+define_composite_type!(Task {
+    uuid: Uuid,
+    command: Command
 });
 
-define_packet_kind!(Task: u8 {
-    0x00 => Run
+define_composite_type!(Command {
+    executable: String,
+    arguments: Vec<String>
 });
 
 define_composite_type!(TaskResult {
@@ -40,8 +41,9 @@ impl JobRequest
 impl Task
 {
     pub fn from_task(task: &job::Task) -> Self {
-        match *task {
-            job::Task::Run(ref command) => Task::Run(Run::from_command(command)),
+        Task {
+            uuid: task.uuid.clone(),
+            command: Command::from_command(&task.command)
         }
     }
 }
@@ -57,10 +59,10 @@ impl TaskResult
     }
 }
 
-impl Run
+impl Command
 {
     pub fn from_command(command: &job::Command) -> Self {
-        Run {
+        Command {
             executable: command.executable.clone(),
             arguments: command.arguments.clone(),
         }
@@ -80,13 +82,14 @@ impl Into<job::Job> for JobRequest
 impl Into<job::Task> for Task
 {
     fn into(self) -> job::Task {
-        match self {
-            Task::Run(command) => job::Task::Run(command.into()),
+        job::Task {
+            uuid: self.uuid,
+            command: self.command.into(),
         }
     }
 }
 
-impl Into<job::Command> for Run {
+impl Into<job::Command> for Command {
     fn into(self) -> job::Command {
         job::Command {
             executable: self.executable,

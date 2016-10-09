@@ -1,4 +1,4 @@
-use {Network, Packet, PacketKind, PendingState, Builder, Error};
+use {Network, Packet, PacketKind, PendingState, Builder, Dispatcher, Error};
 use {remote, network, protocol};
 
 use uuid::Uuid;
@@ -14,6 +14,7 @@ pub struct Node
     pub network: Network,
 
     pub builder: Builder,
+    pub dispatcher: Dispatcher,
 }
 
 impl Node

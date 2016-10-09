@@ -1,4 +1,4 @@
-use {Error, Network, Connection, Builder};
+use {Error, Network, Connection, Builder, Dispatcher};
 use local;
 use workspace;
 
@@ -39,6 +39,7 @@ impl Parapet
                     listener: Some(listener),
                     network: Network::new(uuid),
                     builder: builder,
+                    dispatcher: Dispatcher::new(),
                 },
                 pending_connections: Slab::with_capacity(1024),
             },

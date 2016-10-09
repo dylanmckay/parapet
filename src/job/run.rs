@@ -56,15 +56,11 @@ pub fn job(job: Job, mut workspace: Box<Workspace>, sender: mpsc::Sender<JobOutp
 
 pub fn task(task: job::Task, workspace: &mut Box<Workspace>) -> TaskResult
 {
-    match task.clone() {
-        job::Task::Run(command) => {
-            let task_output = workspace.run(command);
+    let task_output = workspace.run(task.command.clone());
 
-            TaskResult {
-                task: task,
-                output: task_output,
-            }
-        },
+    TaskResult {
+        task: task,
+        output: task_output,
     }
 }
 

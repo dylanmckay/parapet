@@ -154,10 +154,13 @@ impl Interactive
         if let local::Node::Connected { ref mut node, .. } = self.0.node {
             let job = job::Job {
                 uuid: Uuid::new_v4(),
-                tasks: vec![job::Task::Run(job::Command {
-                    executable: executable.to_owned(),
-                    arguments: arguments.to_owned(),
-                })],
+                tasks: vec![job::Task {
+                    uuid: Uuid::new_v4(),
+                    command: job::Command {
+                        executable: executable.to_owned(),
+                        arguments: arguments.to_owned(),
+                    },
+                }],
             };
 
             node.broadcast_packet(&PacketKind::JobRequest(protocol::JobRequest::from_job(&job))).unwrap();

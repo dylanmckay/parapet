@@ -25,6 +25,7 @@ pub use self::protocol::{Packet, PacketKind};
 pub use self::job::Job;
 pub use self::pending_state::PendingState;
 pub use self::builder::Builder;
+pub use self::dispatcher::Dispatcher;
 pub use self::workspace::Workspace;
 
 pub mod parapet;
@@ -36,6 +37,7 @@ pub mod protocol;
 pub mod job;
 pub mod pending_state;
 pub mod builder;
+pub mod dispatcher;
 pub mod workspace;
 
 pub mod graphviz;
