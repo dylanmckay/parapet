@@ -1,4 +1,4 @@
-use Workspace;
+use Sandbox;
 use workspace;
 use job;
 
@@ -19,7 +19,7 @@ impl Basic
     }
 }
 
-impl Workspace for Basic
+impl Sandbox for Basic
 {
     fn run(&mut self, command: job::Command) -> job::run::TaskOutput {
         if !self.directory.exists() {

@@ -1,5 +1,5 @@
 use job::Work;
-use Workspace;
+use Sandbox;
 
 use job;
 
@@ -34,12 +34,12 @@ impl TaskOutput
     }
 }
 
-pub fn work(work: Work, mut workspace: Box<Workspace>, sender: mpsc::Sender<WorkOutput>) {
+pub fn work(work: Work, mut sandbox: Box<Sandbox>, sender: mpsc::Sender<WorkOutput>) {
     thread::spawn(move || {
         let mut results = Vec::new();
 
         for task in work.tasks.iter() {
-            let result = self::task(task.clone(), &mut workspace);
+            let result = self::task(task.clone(), &mut sandbox);
             results.push(result.clone());
 
             if !result.output.is_successful() { break };
@@ -54,9 +54,9 @@ pub fn work(work: Work, mut workspace: Box<Workspace>, sender: mpsc::Sender<Work
     });
 }
 
-pub fn task(task: job::Task, workspace: &mut Box<Workspace>) -> TaskResult
+pub fn task(task: job::Task, sandbox: &mut Box<Sandbox>) -> TaskResult
 {
-    let task_output = workspace.run(task.command.clone());
+    let task_output = sandbox.run(task.command.clone());
 
     TaskResult {
         task: task,

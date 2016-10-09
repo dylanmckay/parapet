@@ -1,9 +1,9 @@
-use Workspace;
+use Sandbox;
 use job;
 
 use gaol::profile::{AddressPattern, Operation, OperationSupport, OperationSupportLevel};
 use gaol::profile::{PathPattern, Profile};
-use gaol::sandbox::{Command, Sandbox, SandboxMethods};
+use gaol::sandbox::{self, Command, SandboxMethods};
 use std::path::PathBuf;
 
 // Create the sandbox profile.
@@ -31,12 +31,12 @@ fn profile() -> Profile {
 
 pub struct Gaol;
 
-impl Workspace for Gaol
+impl Sandbox for Gaol
 {
     fn run(&mut self, command: job::Command) -> job::run::TaskOutput {
         let mut cmd = Command::new(command.executable);
         cmd.args(&command.arguments);
-        Sandbox::new(profile()).start(&mut cmd).unwrap().wait().unwrap();
+        sandbox::Sandbox::new(profile()).start(&mut cmd).unwrap().wait().unwrap();
         unimplemented!();
     }
 }

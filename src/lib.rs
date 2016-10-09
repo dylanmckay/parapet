@@ -29,7 +29,7 @@ pub use self::job::Job;
 pub use self::pending_state::PendingState;
 pub use self::builder::Builder;
 pub use self::dispatcher::Dispatcher;
-pub use self::workspace::Workspace;
+pub use self::workspace::Sandbox;
 
 pub mod parapet;
 pub mod interactive;

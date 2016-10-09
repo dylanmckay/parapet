@@ -12,13 +12,13 @@ use job;
 use std::path::PathBuf;
 
 /// A workspace to run commands in.
-pub trait Workspace : Send
+pub trait Sandbox : Send
 {
     fn run(&mut self, job::Command) -> job::run::TaskOutput;
 }
 
-/// A directory-based workspace.
-pub trait DirectoryBased : Workspace
+/// A directory-based sandbox.
+pub trait DirectoryBased : Sandbox
 {
     fn from_directory(directory: PathBuf) -> Self;
 }
