@@ -14,8 +14,10 @@ extern crate graphsearch;
 extern crate dot;
 extern crate gaol;
 extern crate twox_hash;
+extern crate walkdir;
 #[macro_use]
 extern crate protocol as proto;
+extern crate itertools;
 
 pub use self::parapet::Parapet;
 pub use self::interactive::Interactive;

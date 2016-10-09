@@ -18,6 +18,8 @@ clap = "2.11"
 dot = "0.1"
 gaol = { git = "https://github.com/servo/gaol.git" }
 twox-hash = "1.0.0"
+walkdir = "0.1.8"
+itertools = "0.5.2"
 
 [dev-dependencies]
 stainless = "*"

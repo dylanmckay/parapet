@@ -1,8 +1,10 @@
 pub use self::strategy::Strategy;
+pub use self::cache::Cache;
 pub use self::gaol::Gaol;
 pub use self::basic::Basic;
 
 pub mod strategy;
+pub mod cache;
 pub mod gaol;
 pub mod basic;
 
