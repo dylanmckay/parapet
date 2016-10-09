@@ -177,17 +177,12 @@ impl Node
 
                     println!("connected to network with UUID {}", join_response.your_uuid);
 
-                    let builder = Builder::new(Box::new(
-                        workspace::strategy::InDirectory::<workspace::basic::Basic>::new("parapet-cache"))
-                    );
-
-
                     local::Node::Connected {
                         node: local::connected::Node {
                             uuid: join_response.your_uuid,
                             listener: listener,
                             network: network,
-                            builder: builder,
+                            builder: Builder::new(),
                             dispatcher: Dispatcher::new(),
                         },
                         pending_connections: Slab::with_capacity(1024),

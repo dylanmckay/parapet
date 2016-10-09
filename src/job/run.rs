@@ -5,6 +5,9 @@ use job;
 
 use std::thread;
 use std::sync::mpsc;
+use std::path::Path;
+
+use uuid::Uuid;
 
 #[derive(Clone, Debug)]
 pub struct WorkOutput
@@ -56,7 +59,8 @@ pub fn work(work: Work, mut sandbox: Box<Sandbox>, sender: mpsc::Sender<WorkOutp
 
 pub fn task(task: job::Task, sandbox: &mut Box<Sandbox>) -> TaskResult
 {
-    let task_output = sandbox.run(task.command.clone());
+    let path = format!("nameless-work-{}", Uuid::new_v4());
+    let task_output = sandbox.run(task.command.clone(), &Path::new(&path));
 
     TaskResult {
         task: task,

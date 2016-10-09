@@ -14,8 +14,6 @@ pub struct Builder
 
     running_work: HashMap<Uuid, running::Work>,
     completed_work: VecDeque<CompletedWork>,
-
-    strategy: Box<workspace::Strategy>,
 }
 
 pub struct CompletedWork
@@ -27,7 +25,7 @@ pub struct CompletedWork
 
 impl Builder
 {
-    pub fn new(strategy: Box<workspace::Strategy>) -> Self {
+    pub fn new() -> Self {
         let (tx, rx) = mpsc::channel();
 
         Builder {
@@ -35,7 +33,6 @@ impl Builder
             rx: rx,
             running_work: HashMap::new(),
             completed_work: VecDeque::new(),
-            strategy: strategy,
         }
     }
 
@@ -46,8 +43,8 @@ impl Builder
 
         self.running_work.insert(work.uuid, pending_work);
 
-        let workspace = self.strategy.create_workspace("nameless-work");
-        job::run::work(work, workspace, tx);
+        let workspace = workspace::basic::Basic;
+        job::run::work(work, Box::new(workspace), tx);
     }
 
     pub fn tick(&mut self) {

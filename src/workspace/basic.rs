@@ -2,33 +2,21 @@ use Sandbox;
 use workspace;
 use job;
 
-use std::path::PathBuf;
+use std::path::Path;
 use std::{process, fs};
 
-pub struct Basic {
-    directory: PathBuf,
-}
-
-impl Basic
-{
-    pub fn new<P>(directory: P) -> Self
-        where P: Into<PathBuf> {
-        Basic {
-            directory: directory.into(),
-        }
-    }
-}
+pub struct Basic;
 
 impl Sandbox for Basic
 {
-    fn run(&mut self, command: job::Command) -> job::run::TaskOutput {
-        if !self.directory.exists() {
-            fs::create_dir_all(&self.directory).expect("could not create workspace directory");
+    fn run(&mut self, command: job::Command, working_dir: &Path) -> job::run::TaskOutput {
+        if !working_dir.exists() {
+            fs::create_dir_all(&working_dir).expect("could not create workspace directory");
         }
 
         let output = process::Command::new(&command.executable)
             .args(&command.arguments)
-            .current_dir(&self.directory)
+            .current_dir(working_dir)
             .output()
             .expect("could not spawn command");
 
@@ -41,19 +29,7 @@ impl Sandbox for Basic
             },
         };
 
-        if fs::read_dir(&self.directory).unwrap().next().is_none() {
-            // No point in persisting an empty directory.
-            fs::remove_dir(&self.directory).unwrap();
-        }
-
         output
-    }
-}
-
-impl workspace::DirectoryBased for Basic
-{
-    fn from_directory(directory: PathBuf) -> Self {
-        Basic::new(directory)
     }
 }
 
