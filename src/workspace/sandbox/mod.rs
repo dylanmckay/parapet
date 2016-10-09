@@ -1,3 +1,7 @@
+pub use self::basic::Basic;
+
+pub mod basic;
+
 use job;
 
 use std::path::Path;

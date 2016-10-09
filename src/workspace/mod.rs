@@ -3,5 +3,4 @@ pub use self::sandbox::Sandbox;
 
 pub mod sandbox;
 pub mod cache;
-pub mod basic;
 

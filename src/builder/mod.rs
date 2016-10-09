@@ -43,7 +43,7 @@ impl Builder
 
         self.running_work.insert(work.uuid, pending_work);
 
-        let workspace = workspace::basic::Basic;
+        let workspace = workspace::sandbox::Basic;
         job::run::work(work, Box::new(workspace), tx);
     }
 
