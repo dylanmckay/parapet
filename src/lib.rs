@@ -13,6 +13,7 @@ extern crate byteorder;
 extern crate graphsearch;
 extern crate dot;
 extern crate gaol;
+extern crate twox_hash;
 #[macro_use]
 extern crate protocol as proto;
 
