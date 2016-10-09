@@ -5,6 +5,5 @@ pub use self::sandbox::{Sandbox, DirectoryBased};
 pub mod strategy;
 pub mod sandbox;
 pub mod cache;
-pub mod gaol;
 pub mod basic;
 
