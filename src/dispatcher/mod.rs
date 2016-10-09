@@ -6,36 +6,30 @@ use uuid::Uuid;
 
 pub struct Dispatcher
 {
-    pub pending_jobs: VecDeque<job::Job>,
-    pub running_jobs: VecDeque<RunningJob>,
-    pub completed_jobs: VecDeque<CompletedJob>,
+    pending_jobs: VecDeque<job::Job>,
+    running_jobs: VecDeque<RunningJob>,
+    completed_jobs: VecDeque<CompletedJob>,
 }
 
 pub struct RunningJob
 {
-    pub job: job::Job,
-    pub pending_tasks: VecDeque<job::Task>,
-    pub running_work: HashMap<Uuid, RunningWork>,
-    pub completed_tasks: VecDeque<job::run::TaskResult>,
+    job: job::Job,
+    pending_tasks: VecDeque<job::Task>,
+    running_work: HashMap<Uuid, RunningWork>,
+    completed_tasks: VecDeque<job::run::TaskResult>,
 }
 
 pub struct CompletedJob
 {
-    pub job: job::Job,
-    pub task_results: VecDeque<job::run::TaskResult>,
+    job: job::Job,
+    task_results: VecDeque<job::run::TaskResult>,
 }
 
 pub struct RunningWork
 {
-    pub uuid: Uuid,
-    pub running_tasks: HashMap<Uuid, job::Task>,
-    pub completed_tasks: VecDeque<job::run::TaskResult>,
-}
-
-pub struct Work
-{
-    pub uuid: Uuid,
-    pub tasks: VecDeque<job::Task>,
+    uuid: Uuid,
+    running_tasks: HashMap<Uuid, job::Task>,
+    completed_tasks: VecDeque<job::run::TaskResult>,
 }
 
 pub struct CompletedWork
@@ -59,7 +53,7 @@ impl Dispatcher
     }
 
     /// Poll the dispatcher for work.
-    pub fn poll(&mut self) -> Option<Work> {
+    pub fn poll(&mut self) -> Option<job::Work> {
         if self.running_jobs.is_empty() {
             if let Some(pending_job) = self.pending_jobs.pop_front() {
                 // We may need to move the next job onto the queue.
@@ -79,7 +73,7 @@ impl Dispatcher
                 vec![]
             };
 
-            let work = Work {
+            let work = job::Work {
                 uuid: Uuid::new_v4(),
                 tasks: tasks.into_iter().collect(),
             };

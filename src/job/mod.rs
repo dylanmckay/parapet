@@ -1,6 +1,7 @@
 pub mod run;
 
 use uuid::Uuid;
+use std::collections::VecDeque;
 
 #[derive(Clone, Debug)]
 pub struct Job
@@ -21,5 +22,12 @@ pub struct Command
 {
     pub executable: String,
     pub arguments: Vec<String>,
+}
+
+/// A piece of work dished out.
+pub struct Work
+{
+    pub uuid: Uuid,
+    pub tasks: VecDeque<Task>,
 }
 
