@@ -163,7 +163,7 @@ impl Interactive
                 }],
             };
 
-            node.broadcast_packet(&PacketKind::JobRequest(protocol::JobRequest::from_job(&job))).unwrap();
+            node.broadcast_packet(&PacketKind::WorkRequest(protocol::WorkRequest::from_job(&job))).unwrap();
         } else {
             println!("not yet connected to network");
         }

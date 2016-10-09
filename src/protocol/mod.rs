@@ -1,6 +1,6 @@
 pub use self::network::{Network, Node, Edge};
 pub use self::user_agent::UserAgent;
-pub use self::job::{JobRequest, JobResponse, Task};
+pub use self::job::{WorkRequest, WorkResponse, Task};
 
 pub mod network;
 pub mod user_agent;
@@ -48,8 +48,8 @@ define_packet_kind!(PacketKind: u32 {
     0x05 => Terminate,
     0x10 => JoinRequest,
     0x11 => JoinResponse,
-    0x40 => JobRequest,
-    0x41 => JobResponse
+    0x40 => WorkRequest,
+    0x41 => WorkResponse
 });
 
 impl Packet

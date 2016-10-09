@@ -18,20 +18,20 @@ define_composite_type!(TaskResult {
     result_code: i64
 });
 
-define_packet!(JobRequest {
+define_packet!(WorkRequest {
     uuid: Uuid,
     tasks: Vec<Task>
 });
 
-define_packet!(JobResponse {
+define_packet!(WorkResponse {
     uuid: Uuid,
     tasks: Vec<TaskResult>
 });
 
-impl JobRequest
+impl WorkRequest
 {
     pub fn from_job(job: &job::Job) -> Self {
-        JobRequest {
+        WorkRequest {
             uuid: job.uuid.clone(),
             tasks: job.tasks.iter().map(|task| Task::from_task(task)).collect(),
         }
@@ -69,7 +69,7 @@ impl Command
     }
 }
 
-impl Into<job::Job> for JobRequest
+impl Into<job::Job> for WorkRequest
 {
     fn into(self) -> job::Job {
         job::Job {
