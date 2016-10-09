@@ -152,7 +152,7 @@ impl Interactive
 
     pub fn run_command(&mut self, executable: &str, arguments: &[String]) {
         if let local::Node::Connected { ref mut node, .. } = self.0.node {
-            let job = job::Job {
+            let work = job::Work {
                 uuid: Uuid::new_v4(),
                 tasks: vec![job::Task {
                     uuid: Uuid::new_v4(),
@@ -160,10 +160,10 @@ impl Interactive
                         executable: executable.to_owned(),
                         arguments: arguments.to_owned(),
                     },
-                }],
+                }].into_iter().collect(),
             };
 
-            node.broadcast_packet(&PacketKind::WorkRequest(protocol::WorkRequest::from_job(&job))).unwrap();
+            node.broadcast_packet(&PacketKind::WorkRequest(protocol::WorkRequest::from_work(&work))).unwrap();
         } else {
             println!("not yet connected to network");
         }

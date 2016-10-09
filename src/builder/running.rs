@@ -1,10 +1,10 @@
 use job;
 use uuid::Uuid;
 
-pub struct Job
+pub struct Work
 {
-    /// The UUID of the node that is requesting the job.
+    /// The UUID of the node that is requesting the work.
     pub origin: Uuid,
-    pub job: job::Job,
+    pub work: job::Work,
 }
 

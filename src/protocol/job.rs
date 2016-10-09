@@ -7,6 +7,16 @@ define_composite_type!(Task {
     command: Command
 });
 
+define_composite_type!(Work {
+    uuid: Uuid,
+    tasks: Vec<Task>
+});
+
+define_composite_type!(WorkResult {
+    uuid: Uuid,
+    task_results: Vec<TaskResult>
+});
+
 define_composite_type!(Command {
     executable: String,
     arguments: Vec<String>
@@ -19,8 +29,7 @@ define_composite_type!(TaskResult {
 });
 
 define_packet!(WorkRequest {
-    uuid: Uuid,
-    tasks: Vec<Task>
+    work: Work
 });
 
 define_packet!(WorkResponse {
@@ -30,10 +39,12 @@ define_packet!(WorkResponse {
 
 impl WorkRequest
 {
-    pub fn from_job(job: &job::Job) -> Self {
+    pub fn from_work(work: &job::Work) -> Self {
         WorkRequest {
-            uuid: job.uuid.clone(),
-            tasks: job.tasks.iter().map(|task| Task::from_task(task)).collect(),
+            work: Work {
+                uuid: work.uuid.clone(),
+                tasks: work.tasks.iter().map(|task| Task::from_task(task)).collect(),
+            }
         }
     }
 }
@@ -69,12 +80,12 @@ impl Command
     }
 }
 
-impl Into<job::Job> for WorkRequest
+impl Into<job::Work> for WorkRequest
 {
-    fn into(self) -> job::Job {
-        job::Job {
-            uuid: self.uuid,
-            tasks: self.tasks.iter().cloned().map(|t| t.into()).collect(),
+    fn into(self) -> job::Work {
+        job::Work {
+            uuid: self.work.uuid,
+            tasks: self.work.tasks.iter().cloned().map(|t| t.into()).collect(),
         }
     }
 }

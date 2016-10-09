@@ -4,8 +4,8 @@ use {local, job};
 pub fn packet(node: &mut local::connected::Node, packet: &Packet) {
     match packet.kind {
         PacketKind::WorkRequest(ref work_request) => {
-            let job: job::Job = work_request.clone().into();
-            node.builder.build(packet.origin(), job);
+            let work: job::Work = work_request.clone().into();
+            node.builder.build(packet.origin(), work);
         },
         PacketKind::WorkResponse(ref work_response) => {
             println!("job completed on Node({})", packet.origin());

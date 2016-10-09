@@ -25,6 +25,7 @@ pub struct Command
 }
 
 /// A piece of work dished out.
+#[derive(Clone, Debug)]
 pub struct Work
 {
     pub uuid: Uuid,

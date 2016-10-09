@@ -63,14 +63,14 @@ impl Node
     pub fn tick(&mut self) -> Result<(), Error> {
         self.builder.tick();
 
-        let completed_jobs: Vec<_> = self.builder.completed_jobs().collect();
-        for job in completed_jobs {
+        let completed_work: Vec<_> = self.builder.completed_work().collect();
+        for work in completed_work {
             let response = PacketKind::WorkResponse(protocol::WorkResponse {
-                uuid: job.output.job.uuid,
-                tasks: job.output.task_results.into_iter().map(|a| protocol::job::TaskResult::from_task_result(&a)).collect(),
+                uuid: work.output.work.uuid,
+                tasks: work.output.task_results.into_iter().map(|a| protocol::job::TaskResult::from_task_result(&a)).collect(),
             });
 
-            self.send_packet_to(&job.origin, &response)?;
+            self.send_packet_to(&work.origin, &response)?;
         }
 
         Ok(())

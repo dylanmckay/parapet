@@ -1,4 +1,4 @@
-use Job;
+use job::Work;
 use Workspace;
 
 use job;
@@ -7,9 +7,9 @@ use std::thread;
 use std::sync::mpsc;
 
 #[derive(Clone, Debug)]
-pub struct JobOutput
+pub struct WorkOutput
 {
-    pub job: Job,
+    pub work: Work,
     pub task_results: Vec<TaskResult>,
 }
 
@@ -34,23 +34,23 @@ impl TaskOutput
     }
 }
 
-pub fn job(job: Job, mut workspace: Box<Workspace>, sender: mpsc::Sender<JobOutput>) {
+pub fn work(work: Work, mut workspace: Box<Workspace>, sender: mpsc::Sender<WorkOutput>) {
     thread::spawn(move || {
         let mut results = Vec::new();
 
-        for task in job.tasks.iter() {
+        for task in work.tasks.iter() {
             let result = self::task(task.clone(), &mut workspace);
             results.push(result.clone());
 
             if !result.output.is_successful() { break };
         }
 
-        let job_output = JobOutput {
-            job: job,
+        let work_output = WorkOutput {
+            work: work,
             task_results: results,
         };
 
-        sender.send(job_output).ok();
+        sender.send(work_output).ok();
     });
 }
 
