@@ -1,5 +1,4 @@
-use ci;
-use job;
+use ci::{self, job};
 
 use std::path::PathBuf;
 

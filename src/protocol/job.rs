@@ -1,4 +1,4 @@
-use {ci, job};
+use ci;
 
 use uuid::Uuid;
 
@@ -51,7 +51,7 @@ impl WorkRequest
 
 impl Task
 {
-    pub fn from_task(task: &job::Task) -> Self {
+    pub fn from_task(task: &ci::job::Task) -> Self {
         Task {
             uuid: task.uuid.clone(),
             command: Command::from_command(&task.command)
@@ -72,7 +72,7 @@ impl TaskResult
 
 impl Command
 {
-    pub fn from_command(command: &job::Command) -> Self {
+    pub fn from_command(command: &ci::job::Command) -> Self {
         Command {
             executable: command.executable.clone(),
             arguments: command.arguments.clone(),
@@ -90,19 +90,19 @@ impl Into<ci::build::Work> for WorkRequest
     }
 }
 
-impl Into<job::Task> for Task
+impl Into<ci::job::Task> for Task
 {
-    fn into(self) -> job::Task {
-        job::Task {
+    fn into(self) -> ci::job::Task {
+        ci::job::Task {
             uuid: self.uuid,
             command: self.command.into(),
         }
     }
 }
 
-impl Into<job::Command> for Command {
-    fn into(self) -> job::Command {
-        job::Command {
+impl Into<ci::job::Command> for Command {
+    fn into(self) -> ci::job::Command {
+        ci::job::Command {
             executable: self.executable,
             arguments: self.arguments,
         }

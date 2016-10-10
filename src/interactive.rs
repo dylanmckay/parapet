@@ -1,4 +1,4 @@
-use {Parapet, Error, PacketKind, job};
+use {Parapet, Error, PacketKind};
 use ci;
 use network::local;
 
@@ -144,11 +144,11 @@ impl Interactive
 
     pub fn run_command(&mut self, executable: &str, arguments: &[String]) {
         if let local::Node::Connected { ref mut node, .. } = self.0.node {
-            let work = ci::build::Work {
+            let work = ci::Work {
                 uuid: Uuid::new_v4(),
-                tasks: vec![job::Task {
+                tasks: vec![ci::Task {
                     uuid: Uuid::new_v4(),
-                    command: job::Command {
+                    command: ci::Command {
                         executable: executable.to_owned(),
                         arguments: arguments.to_owned(),
                     },

@@ -1,5 +1,4 @@
-use ci::Sandbox;
-use job;
+use ci::{Task, Sandbox};
 
 use std::path::Path;
 use std::sync::mpsc;
@@ -13,7 +12,7 @@ use uuid::Uuid;
 pub struct Work
 {
     pub uuid: Uuid,
-    pub tasks: VecDeque<job::Task>,
+    pub tasks: VecDeque<Task>,
 }
 
 #[derive(Clone, Debug)]
@@ -26,7 +25,7 @@ pub struct WorkOutput
 #[derive(Clone, Debug)]
 pub struct TaskResult
 {
-    pub task: job::Task,
+    pub task: Task,
     pub output: TaskOutput,
 }
 
@@ -64,7 +63,7 @@ pub fn work(work: Work, mut sandbox: Box<Sandbox>, sender: mpsc::Sender<WorkOutp
     });
 }
 
-pub fn task(task: job::Task, sandbox: &mut Box<Sandbox>) -> TaskResult
+pub fn task(task: Task, sandbox: &mut Box<Sandbox>) -> TaskResult
 {
     let path = format!("nameless-work-{}", Uuid::new_v4());
     let task_output = sandbox.run(task.command.clone(), &Path::new(&path));

@@ -1,5 +1,4 @@
-use job;
-use ci;
+use ci::{self, Job, Task};
 
 use std::collections::{HashMap, VecDeque};
 
@@ -7,29 +6,29 @@ use uuid::Uuid;
 
 pub struct Dispatcher
 {
-    pending_jobs: VecDeque<job::Job>,
+    pending_jobs: VecDeque<Job>,
     running_jobs: VecDeque<RunningJob>,
     completed_jobs: VecDeque<CompletedJob>,
 }
 
 pub struct RunningJob
 {
-    job: job::Job,
-    pending_tasks: VecDeque<job::Task>,
+    job: Job,
+    pending_tasks: VecDeque<Task>,
     running_work: HashMap<Uuid, RunningWork>,
     completed_tasks: VecDeque<ci::build::TaskResult>,
 }
 
 pub struct CompletedJob
 {
-    pub job: job::Job,
+    pub job: Job,
     pub task_results: VecDeque<ci::build::TaskResult>,
 }
 
 pub struct RunningWork
 {
     uuid: Uuid,
-    running_tasks: HashMap<Uuid, job::Task>,
+    running_tasks: HashMap<Uuid, Task>,
     completed_tasks: VecDeque<ci::build::TaskResult>,
 }
 
@@ -49,7 +48,7 @@ impl Dispatcher
         }
     }
 
-    pub fn enqueue(&mut self, job: job::Job) {
+    pub fn enqueue(&mut self, job: Job) {
         self.pending_jobs.push_back(job);
     }
 

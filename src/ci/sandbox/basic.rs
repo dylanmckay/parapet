@@ -1,5 +1,4 @@
-use ci::{build, Sandbox};
-use job;
+use ci::{build, Command, Sandbox};
 
 use std::path::Path;
 use std::{process, fs};
@@ -8,7 +7,7 @@ pub struct Basic;
 
 impl Sandbox for Basic
 {
-    fn run(&mut self, command: job::Command, working_dir: &Path) -> build::TaskOutput {
+    fn run(&mut self, command: Command, working_dir: &Path) -> build::TaskOutput {
         if !working_dir.exists() {
             fs::create_dir_all(&working_dir).expect("could not create ci directory");
         }
