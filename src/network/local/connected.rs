@@ -52,6 +52,7 @@ impl Node
             self.network.insert(network::Node {
                 uuid: join_response.your_uuid,
                 connection: Some(pending_connection.connection),
+                status: network::Status::Remote(network::remote::Status::default()),
             });
 
             self.network.connect(&self.uuid, &join_response.your_uuid);

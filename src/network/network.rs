@@ -1,4 +1,4 @@
-use network::{Connection, Path};
+use network::{Connection, Path, Status};
 use std::collections::{HashMap, VecDeque};
 
 use uuid::Uuid;
@@ -43,6 +43,7 @@ pub struct Node
 {
     pub uuid: Uuid,
     pub connection: Option<Connection>,
+    pub status: Status,
 }
 
 /// An edge betweeb two nodes.
@@ -91,6 +92,7 @@ impl Network
         network.insert(Node {
             uuid: your_uuid,
             connection: None,
+            status: Status::Local,
         });
 
         network

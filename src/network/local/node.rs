@@ -171,6 +171,7 @@ impl Node
                     network.insert(network::Node {
                         uuid: join_response.your_uuid,
                         connection: None,
+                        status: network::Status::Local,
                     });
 
                     // Connect ourselves and the node we're communicating with.

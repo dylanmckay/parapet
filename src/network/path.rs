@@ -31,6 +31,10 @@ impl Path
         self
     }
 
+    pub fn sender(&self) -> &Uuid {
+        self.head().expect("packet has no sender")
+    }
+
     pub fn head(&self) -> Option<&Uuid> {
         self.hops.back()
     }

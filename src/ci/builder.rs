@@ -73,5 +73,10 @@ impl Builder
     pub fn completed_work(&mut self) -> ::std::collections::vec_deque::Drain<CompletedWork> {
         self.completed_work.drain(..)
     }
+
+    /// Decides whether or not we are ready to do more work.
+    pub fn should_pickup_work(&self) -> bool {
+        true
+    }
 }
 

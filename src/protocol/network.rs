@@ -7,7 +7,15 @@ define_composite_type!(Network {
 });
 
 define_composite_type!(Node {
-    uuid: Uuid
+    // The UUID of the node.
+    uuid: Uuid,
+    // The status of the node, if it is remote.
+    status: Option<NodeStatus>
+});
+
+// Defines the status of a remote node.
+define_composite_type!(NodeStatus {
+    work_available: bool
 });
 
 define_composite_type!(Edge {
@@ -30,6 +38,10 @@ impl Node
     pub fn from_node(node: &network::Node) -> Self {
         Node {
             uuid: node.uuid.clone(),
+            status: match node.status {
+                network::Status::Local => None,
+                network::Status::Remote(ref status) => Some(NodeStatus::from_remote_status(status)),
+            },
         }
     }
 }
@@ -40,6 +52,15 @@ impl Edge
         Edge {
             a: edge.a.clone(),
             b: edge.b.clone(),
+        }
+    }
+}
+
+impl NodeStatus
+{
+    fn from_remote_status(status: &network::remote::Status) -> Self {
+        NodeStatus {
+            work_available: status.work_available,
         }
     }
 }
@@ -60,6 +81,10 @@ impl Into<network::Node> for Node
         network::Node {
             uuid: self.uuid,
             connection: None,
+            status: match self.status {
+                Some(status) => network::Status::Remote(status.into()),
+                None => network::Status::Local,
+            }
         }
     }
 }
@@ -70,6 +95,15 @@ impl Into<network::Edge> for Edge
         network::Edge {
             a: self.a,
             b: self.b,
+        }
+    }
+}
+
+impl Into<network::remote::Status> for NodeStatus
+{
+    fn into(self) -> network::remote::Status {
+        network::remote::Status {
+            work_available: self.work_available,
         }
     }
 }
