@@ -1,6 +1,5 @@
 use {Error, Network, Connection, Builder, Dispatcher};
 use local;
-use workspace;
 
 use mio;
 use mio::tcp::*;

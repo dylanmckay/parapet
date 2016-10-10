@@ -1,6 +1,6 @@
 use Sandbox;
 use workspace::build;
-use {workspace, job};
+use job;
 
 use std::path::Path;
 use std::{process, fs};

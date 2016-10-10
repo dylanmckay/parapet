@@ -22,8 +22,8 @@ pub struct RunningJob
 
 pub struct CompletedJob
 {
-    job: job::Job,
-    task_results: VecDeque<workspace::build::TaskResult>,
+    pub job: job::Job,
+    pub task_results: VecDeque<workspace::build::TaskResult>,
 }
 
 pub struct RunningWork
@@ -104,6 +104,11 @@ impl Dispatcher
         }
 
         self.move_finished_jobs();
+    }
+
+    pub fn completed_jobs(&mut self) -> impl Iterator<Item=CompletedJob> {
+        let completed_jobs: Vec<_> = self.completed_jobs.drain(..).collect();
+        completed_jobs.into_iter()
     }
 
     fn move_finished_jobs(&mut self) {

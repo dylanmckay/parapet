@@ -1,5 +1,5 @@
 use {Error, Connection, PendingState, Builder, Dispatcher};
-use {local, remote, network, workspace};
+use {local, remote, network};
 
 use slab::Slab;
 use proto;
