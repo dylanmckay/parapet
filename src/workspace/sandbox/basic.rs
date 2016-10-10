@@ -1,6 +1,6 @@
 use Sandbox;
-use workspace;
-use job;
+use workspace::build;
+use {workspace, job};
 
 use std::path::Path;
 use std::{process, fs};
@@ -9,7 +9,7 @@ pub struct Basic;
 
 impl Sandbox for Basic
 {
-    fn run(&mut self, command: job::Command, working_dir: &Path) -> job::run::TaskOutput {
+    fn run(&mut self, command: job::Command, working_dir: &Path) -> build::TaskOutput {
         if !working_dir.exists() {
             fs::create_dir_all(&working_dir).expect("could not create workspace directory");
         }
@@ -20,7 +20,7 @@ impl Sandbox for Basic
             .output()
             .expect("could not spawn command");
 
-        let output = job::run::TaskOutput {
+        let output = build::TaskOutput {
             // FIXME: grab stderr
             output: output.stdout,
             result_code: match output.status.code() {

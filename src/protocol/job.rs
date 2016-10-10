@@ -1,4 +1,4 @@
-use job;
+use {workspace, job};
 
 use uuid::Uuid;
 
@@ -61,7 +61,7 @@ impl Task
 
 impl TaskResult
 {
-    pub fn from_task_result(task_result: &job::run::TaskResult) -> Self {
+    pub fn from_task_result(task_result: &workspace::build::TaskResult) -> Self {
         TaskResult {
             task: Task::from_task(&task_result.task),
             output: task_result.output.output.clone(),

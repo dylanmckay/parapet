@@ -1,4 +1,5 @@
 use job;
+use workspace;
 
 use std::collections::{HashMap, VecDeque};
 
@@ -16,26 +17,26 @@ pub struct RunningJob
     job: job::Job,
     pending_tasks: VecDeque<job::Task>,
     running_work: HashMap<Uuid, RunningWork>,
-    completed_tasks: VecDeque<job::run::TaskResult>,
+    completed_tasks: VecDeque<workspace::build::TaskResult>,
 }
 
 pub struct CompletedJob
 {
     job: job::Job,
-    task_results: VecDeque<job::run::TaskResult>,
+    task_results: VecDeque<workspace::build::TaskResult>,
 }
 
 pub struct RunningWork
 {
     uuid: Uuid,
     running_tasks: HashMap<Uuid, job::Task>,
-    completed_tasks: VecDeque<job::run::TaskResult>,
+    completed_tasks: VecDeque<workspace::build::TaskResult>,
 }
 
 pub struct CompletedWork
 {
     pub uuid: Uuid,
-    pub task_results: VecDeque<job::run::TaskResult>,
+    pub task_results: VecDeque<workspace::build::TaskResult>,
 }
 
 impl Dispatcher

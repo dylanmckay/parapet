@@ -3,6 +3,7 @@ pub use self::basic::Basic;
 pub mod basic;
 
 use job;
+use workspace::build;
 
 use std::path::Path;
 
@@ -10,6 +11,6 @@ use std::path::Path;
 pub trait Sandbox : Send
 {
     fn run(&mut self, command: job::Command, working_dir: &Path)
-        -> job::run::TaskOutput;
+        -> build::TaskOutput;
 }
 

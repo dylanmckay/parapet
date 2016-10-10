@@ -9,8 +9,8 @@ pub mod running;
 
 pub struct Builder
 {
-    tx: mpsc::Sender<job::run::WorkOutput>,
-    rx: mpsc::Receiver<job::run::WorkOutput>,
+    tx: mpsc::Sender<workspace::build::WorkOutput>,
+    rx: mpsc::Receiver<workspace::build::WorkOutput>,
 
     running_work: HashMap<Uuid, running::Work>,
     completed_work: VecDeque<CompletedWork>,
@@ -20,7 +20,7 @@ pub struct CompletedWork
 {
     /// The UUID of the node that is requesting the work.
     pub origin: Uuid,
-    pub output: job::run::WorkOutput,
+    pub output: workspace::build::WorkOutput,
 }
 
 impl Builder
@@ -44,7 +44,7 @@ impl Builder
         self.running_work.insert(work.uuid, pending_work);
 
         let workspace = workspace::sandbox::Basic;
-        job::run::work(work, Box::new(workspace), tx);
+        workspace::build::work(work, Box::new(workspace), tx);
     }
 
     pub fn tick(&mut self) {

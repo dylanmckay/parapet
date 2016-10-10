@@ -105,6 +105,8 @@ impl Cache
             }
         }).collect();
     }
+
+    pub fn directory(&self) -> &PathBuf { &self.directory }
 }
 
 fn hash_file(path: &Path) -> Result<Hash, io::Error> {

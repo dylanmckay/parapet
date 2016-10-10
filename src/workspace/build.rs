@@ -1,18 +1,16 @@
-use job::Work;
-use Sandbox;
-
+use workspace::Sandbox;
 use job;
 
-use std::thread;
-use std::sync::mpsc;
 use std::path::Path;
+use std::sync::mpsc;
+use std::thread;
 
 use uuid::Uuid;
 
 #[derive(Clone, Debug)]
 pub struct WorkOutput
 {
-    pub work: Work,
+    pub work: job::Work,
     pub task_results: Vec<TaskResult>,
 }
 
@@ -37,7 +35,7 @@ impl TaskOutput
     }
 }
 
-pub fn work(work: Work, mut sandbox: Box<Sandbox>, sender: mpsc::Sender<WorkOutput>) {
+pub fn work(work: job::Work, mut sandbox: Box<Sandbox>, sender: mpsc::Sender<WorkOutput>) {
     thread::spawn(move || {
         let mut results = Vec::new();
 
