@@ -1,10 +1,10 @@
 use {Packet, PacketKind};
-use {local, job};
+use {local, workspace};
 
 pub fn packet(node: &mut local::connected::Node, packet: &Packet) {
     match packet.kind {
         PacketKind::WorkRequest(ref work_request) => {
-            let work: job::Work = work_request.clone().into();
+            let work: workspace::build::Work = work_request.clone().into();
             node.builder.build(packet.origin(), work);
         },
         PacketKind::WorkResponse(ref work_response) => {

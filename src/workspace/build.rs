@@ -4,13 +4,22 @@ use job;
 use std::path::Path;
 use std::sync::mpsc;
 use std::thread;
+use std::collections::VecDeque;
 
 use uuid::Uuid;
+
+/// A piece of work dished out.
+#[derive(Clone, Debug)]
+pub struct Work
+{
+    pub uuid: Uuid,
+    pub tasks: VecDeque<job::Task>,
+}
 
 #[derive(Clone, Debug)]
 pub struct WorkOutput
 {
-    pub work: job::Work,
+    pub work: Work,
     pub task_results: Vec<TaskResult>,
 }
 
@@ -35,7 +44,7 @@ impl TaskOutput
     }
 }
 
-pub fn work(work: job::Work, mut sandbox: Box<Sandbox>, sender: mpsc::Sender<WorkOutput>) {
+pub fn work(work: Work, mut sandbox: Box<Sandbox>, sender: mpsc::Sender<WorkOutput>) {
     thread::spawn(move || {
         let mut results = Vec::new();
 

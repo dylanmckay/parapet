@@ -39,7 +39,7 @@ define_packet!(WorkResponse {
 
 impl WorkRequest
 {
-    pub fn from_work(work: &job::Work) -> Self {
+    pub fn from_work(work: &workspace::build::Work) -> Self {
         WorkRequest {
             work: Work {
                 uuid: work.uuid.clone(),
@@ -80,10 +80,10 @@ impl Command
     }
 }
 
-impl Into<job::Work> for WorkRequest
+impl Into<workspace::build::Work> for WorkRequest
 {
-    fn into(self) -> job::Work {
-        job::Work {
+    fn into(self) -> workspace::build::Work {
+        workspace::build::Work {
             uuid: self.work.uuid,
             tasks: self.work.tasks.iter().cloned().map(|t| t.into()).collect(),
         }

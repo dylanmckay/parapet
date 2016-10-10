@@ -1,4 +1,4 @@
-use {job, workspace};
+use workspace;
 
 use uuid::Uuid;
 
@@ -36,7 +36,7 @@ impl Builder
         }
     }
 
-    pub fn build(&mut self, origin: Uuid, work: job::Work) {
+    pub fn build(&mut self, origin: Uuid, work: workspace::build::Work) {
         let tx = self.tx.clone();
 
         let pending_work = running::Work { origin: origin, work: work.clone() };

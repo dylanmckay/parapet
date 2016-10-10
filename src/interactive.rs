@@ -1,5 +1,5 @@
 use {Parapet, Error, PacketKind, job};
-use local;
+use {local, workspace};
 
 use std::{io, fs, thread};
 use std::sync::mpsc::channel;
@@ -152,7 +152,7 @@ impl Interactive
 
     pub fn run_command(&mut self, executable: &str, arguments: &[String]) {
         if let local::Node::Connected { ref mut node, .. } = self.0.node {
-            let work = job::Work {
+            let work = workspace::build::Work {
                 uuid: Uuid::new_v4(),
                 tasks: vec![job::Task {
                     uuid: Uuid::new_v4(),

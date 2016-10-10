@@ -54,7 +54,7 @@ impl Dispatcher
     }
 
     /// Poll the dispatcher for work.
-    pub fn poll(&mut self) -> Option<job::Work> {
+    pub fn poll(&mut self) -> Option<workspace::build::Work> {
         if self.running_jobs.is_empty() {
             if let Some(pending_job) = self.pending_jobs.pop_front() {
                 // We may need to move the next job onto the queue.
@@ -74,7 +74,7 @@ impl Dispatcher
                 vec![]
             };
 
-            let work = job::Work {
+            let work = workspace::build::Work {
                 uuid: Uuid::new_v4(),
                 tasks: tasks.into_iter().collect(),
             };
