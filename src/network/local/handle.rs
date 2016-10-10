@@ -1,6 +1,6 @@
 use {Error, Packet, PacketKind};
 use {ci, protocol};
-use network::{self, local};
+use network::{self, local, remote};
 
 pub fn packet(node: &mut local::connected::Node, packet: &Packet)
     -> Result<(), Error> {
@@ -41,7 +41,7 @@ pub fn packet(node: &mut local::connected::Node, packet: &Packet)
             println!("work available on {}", sender_uuid);
 
             if let network::Status::Remote(ref mut status) = sender.status {
-                status.work_available = true;
+                status.work = remote::status::Work::Available { have_asked_for_work: false };
             }
 
             Ok(())
@@ -51,7 +51,7 @@ pub fn packet(node: &mut local::connected::Node, packet: &Packet)
             let sender = node.network.get_mut(&sender_uuid).unwrap();
 
             if let network::Status::Remote(ref mut status) = sender.status {
-                status.work_available = false;
+                status.work = remote::status::Work::Unavailable;
             }
 
             Ok(())

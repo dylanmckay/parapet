@@ -1,4 +1,4 @@
-use network::{Connection, Status};
+use network::{remote, Connection, Status};
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -11,8 +11,12 @@ pub struct Node
 
 impl Node
 {
-    pub fn has_work_available(&self) -> bool {
-        if let Status::Remote(ref s) = self.status { s.work_available } else { false }
+    pub fn can_ask_for_work(&self) -> bool {
+        if let Status::Remote(ref s) = self.status {
+            if let remote::status::Work::Available { have_asked_for_work } = s.work { !have_asked_for_work } else { false }
+        } else {
+            false
+        }
     }
 }
 

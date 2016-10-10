@@ -60,7 +60,7 @@ impl NodeStatus
 {
     fn from_remote_status(status: &network::remote::Status) -> Self {
         NodeStatus {
-            work_available: status.work_available,
+            work_available: if let network::remote::status::Work::Available { .. } = status.work { true } else { false },
         }
     }
 }
@@ -102,9 +102,13 @@ impl Into<network::Edge> for Edge
 impl Into<network::remote::Status> for NodeStatus
 {
     fn into(self) -> network::remote::Status {
-        network::remote::Status {
-            work_available: self.work_available,
-        }
+        let work = if self.work_available {
+            network::remote::status::Work::Available { have_asked_for_work: false }
+        } else {
+            network::remote::status::Work::Unavailable
+        };
+
+        network::remote::Status { work: work }
     }
 }
 

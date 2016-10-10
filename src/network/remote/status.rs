@@ -1,17 +1,26 @@
 use std::default::Default;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Status
 {
-    pub work_available: bool,
+    pub work: Work,
 }
 
 impl Default for Status
 {
     fn default() -> Self {
         Status {
-            work_available: false,
+            work: Work::Unavailable,
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Work
+{
+    Unavailable,
+    Available {
+        have_asked_for_work: bool,
+    },
 }
 

@@ -72,15 +72,7 @@ impl Node
             self.broadcast_packet(&packet)?;
         }
 
-        // If we're feeling up to it, grab some work from other nodes.
-        if self.builder.should_pickup_work() {
-            let node_uuid = self.network.nodes().filter(|n| n.has_work_available()).next().map(|n| n.uuid.clone());
-
-            if let Some(node_uuid) = node_uuid {
-                println!("asking for more work");
-                self.send_packet_to(&node_uuid, &PacketKind::WorkRequest(protocol::WorkRequest))?;
-            }
-        }
+        self.ask_for_work()?;
 
         let completed_work: Vec<_> = self.builder.completed_work().collect();
         for work in completed_work {
@@ -96,4 +88,22 @@ impl Node
     }
 
     pub fn is_listening(&self) -> bool { self.listener.is_some() }
+
+    fn ask_for_work(&mut self) -> Result<(), Error> {
+        // If we're feeling up to it, grab some work from other nodes.
+        if self.builder.should_pickup_work() {
+            let node_uuid = self.network.nodes().filter(|n| n.can_ask_for_work()).next().map(|n| n.uuid.clone());
+
+            if let Some(node_uuid) = node_uuid {
+                self.send_packet_to(&node_uuid, &PacketKind::WorkRequest(protocol::WorkRequest))?;
+
+                if let remote::status::Work::Available { ref mut have_asked_for_work }
+                    = self.network.get_mut(&node_uuid).unwrap().status.expect_remote_mut().work {
+                    *have_asked_for_work = true;
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
