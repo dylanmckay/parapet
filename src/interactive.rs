@@ -1,5 +1,6 @@
 use {Parapet, Error, PacketKind, job};
-use {local, workspace};
+use workspace;
+use comm::local;
 
 use std::{io, fs, thread};
 use std::sync::mpsc::channel;

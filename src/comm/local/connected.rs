@@ -1,5 +1,6 @@
 use {Network, Packet, PacketKind, PendingState, Builder, Dispatcher, Error};
-use {remote, network, protocol};
+use {network, protocol};
+use comm::remote;
 
 use uuid::Uuid;
 use mio::tcp::*;

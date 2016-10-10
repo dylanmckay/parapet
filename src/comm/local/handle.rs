@@ -1,5 +1,6 @@
 use {Packet, PacketKind};
-use {local, workspace};
+use workspace;
+use comm::local;
 
 pub fn packet(node: &mut local::connected::Node, packet: &Packet) {
     match packet.kind {
