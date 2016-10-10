@@ -1,4 +1,4 @@
-use workspace::Sandbox;
+use ci::Sandbox;
 use job;
 
 use std::path::Path;

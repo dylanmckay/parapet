@@ -1,5 +1,4 @@
-use Sandbox;
-use workspace::build;
+use ci::{build, Sandbox};
 use job;
 
 use std::path::Path;
@@ -11,7 +10,7 @@ impl Sandbox for Basic
 {
     fn run(&mut self, command: job::Command, working_dir: &Path) -> build::TaskOutput {
         if !working_dir.exists() {
-            fs::create_dir_all(&working_dir).expect("could not create workspace directory");
+            fs::create_dir_all(&working_dir).expect("could not create ci directory");
         }
 
         let output = process::Command::new(&command.executable)

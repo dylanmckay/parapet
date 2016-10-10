@@ -26,7 +26,6 @@ pub use self::protocol::{Packet, PacketKind};
 pub use self::job::Job;
 pub use self::builder::Builder;
 pub use self::dispatcher::Dispatcher;
-pub use self::workspace::Sandbox;
 
 pub mod comm;
 pub mod parapet;
@@ -37,7 +36,7 @@ pub mod protocol;
 pub mod job;
 pub mod builder;
 pub mod dispatcher;
-pub mod workspace;
+pub mod ci;
 
 pub const SERVER_PORT: u16 = 53371;
 pub const SERVER_ADDRESS: (&'static str, u16) = ("127.0.0.1", SERVER_PORT);

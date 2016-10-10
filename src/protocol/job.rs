@@ -1,4 +1,4 @@
-use {workspace, job};
+use {ci, job};
 
 use uuid::Uuid;
 
@@ -39,7 +39,7 @@ define_packet!(WorkResponse {
 
 impl WorkRequest
 {
-    pub fn from_work(work: &workspace::build::Work) -> Self {
+    pub fn from_work(work: &ci::build::Work) -> Self {
         WorkRequest {
             work: Work {
                 uuid: work.uuid.clone(),
@@ -61,7 +61,7 @@ impl Task
 
 impl TaskResult
 {
-    pub fn from_task_result(task_result: &workspace::build::TaskResult) -> Self {
+    pub fn from_task_result(task_result: &ci::build::TaskResult) -> Self {
         TaskResult {
             task: Task::from_task(&task_result.task),
             output: task_result.output.output.clone(),
@@ -80,10 +80,10 @@ impl Command
     }
 }
 
-impl Into<workspace::build::Work> for WorkRequest
+impl Into<ci::build::Work> for WorkRequest
 {
-    fn into(self) -> workspace::build::Work {
-        workspace::build::Work {
+    fn into(self) -> ci::build::Work {
+        ci::build::Work {
             uuid: self.work.uuid,
             tasks: self.work.tasks.iter().cloned().map(|t| t.into()).collect(),
         }

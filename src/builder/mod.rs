@@ -1,4 +1,4 @@
-use workspace;
+use ci;
 
 use uuid::Uuid;
 
@@ -9,8 +9,8 @@ pub mod running;
 
 pub struct Builder
 {
-    tx: mpsc::Sender<workspace::build::WorkOutput>,
-    rx: mpsc::Receiver<workspace::build::WorkOutput>,
+    tx: mpsc::Sender<ci::build::WorkOutput>,
+    rx: mpsc::Receiver<ci::build::WorkOutput>,
 
     running_work: HashMap<Uuid, running::Work>,
     completed_work: VecDeque<CompletedWork>,
@@ -20,7 +20,7 @@ pub struct CompletedWork
 {
     /// The UUID of the node that is requesting the work.
     pub origin: Uuid,
-    pub output: workspace::build::WorkOutput,
+    pub output: ci::build::WorkOutput,
 }
 
 impl Builder
@@ -36,15 +36,15 @@ impl Builder
         }
     }
 
-    pub fn build(&mut self, origin: Uuid, work: workspace::build::Work) {
+    pub fn build(&mut self, origin: Uuid, work: ci::build::Work) {
         let tx = self.tx.clone();
 
         let pending_work = running::Work { origin: origin, work: work.clone() };
 
         self.running_work.insert(work.uuid, pending_work);
 
-        let workspace = workspace::sandbox::Basic;
-        workspace::build::work(work, Box::new(workspace), tx);
+        let ci = ci::sandbox::Basic;
+        ci::build::work(work, Box::new(ci), tx);
     }
 
     pub fn tick(&mut self) {

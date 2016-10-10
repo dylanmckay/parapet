@@ -1,17 +1,17 @@
-use workspace;
+use ci;
 use job;
 
 use std::path::PathBuf;
 
-/// A workspace.
+/// A ci.
 pub struct Project
 {
     /// The project name.
     pub name: String,
     /// The file cache.
-    pub cache: workspace::Cache,
+    pub cache: ci::Cache,
     /// The sandboxing implementation.
-    pub sandbox: Box<workspace::Sandbox>,
+    pub sandbox: Box<ci::Sandbox>,
 }
 
 impl Project
@@ -19,13 +19,13 @@ impl Project
     pub fn new(name: String, directory: PathBuf) -> Self {
         Project {
             name: name,
-            cache: workspace::Cache::new(directory),
-            sandbox: Box::new(workspace::sandbox::Basic),
+            cache: ci::Cache::new(directory),
+            sandbox: Box::new(ci::sandbox::Basic),
         }
     }
 
     pub fn run(&mut self, command: job::Command)
-        -> workspace::build::TaskOutput {
+        -> ci::build::TaskOutput {
         self.sandbox.run(command, self.cache.directory())
     }
 }

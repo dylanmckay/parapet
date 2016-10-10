@@ -1,13 +1,13 @@
-use workspace;
+use ci;
 
 use std::path::PathBuf;
 use std::collections::HashMap;
 
-/// A workspace of projects.
+/// A ci of projects.
 pub struct Workspace
 {
     path: PathBuf,
-    projects: HashMap<String, workspace::Project>,
+    projects: HashMap<String, ci::Project>,
 }
 
 impl Workspace
@@ -19,9 +19,9 @@ impl Workspace
         }
     }
 
-    pub fn open_project(&mut self, name: String) -> &mut workspace::Project {
+    pub fn open_project(&mut self, name: String) -> &mut ci::Project {
         let project_path = self.path.join(name.clone());
-        self.projects.insert(name.clone(), workspace::Project::new(name.clone(), project_path));
+        self.projects.insert(name.clone(), ci::Project::new(name.clone(), project_path));
         self.projects.get_mut(&name).unwrap()
     }
 }

@@ -1,5 +1,5 @@
 use job;
-use workspace;
+use ci;
 
 use std::collections::{HashMap, VecDeque};
 
@@ -17,26 +17,26 @@ pub struct RunningJob
     job: job::Job,
     pending_tasks: VecDeque<job::Task>,
     running_work: HashMap<Uuid, RunningWork>,
-    completed_tasks: VecDeque<workspace::build::TaskResult>,
+    completed_tasks: VecDeque<ci::build::TaskResult>,
 }
 
 pub struct CompletedJob
 {
     pub job: job::Job,
-    pub task_results: VecDeque<workspace::build::TaskResult>,
+    pub task_results: VecDeque<ci::build::TaskResult>,
 }
 
 pub struct RunningWork
 {
     uuid: Uuid,
     running_tasks: HashMap<Uuid, job::Task>,
-    completed_tasks: VecDeque<workspace::build::TaskResult>,
+    completed_tasks: VecDeque<ci::build::TaskResult>,
 }
 
 pub struct CompletedWork
 {
     pub uuid: Uuid,
-    pub task_results: VecDeque<workspace::build::TaskResult>,
+    pub task_results: VecDeque<ci::build::TaskResult>,
 }
 
 impl Dispatcher
@@ -54,7 +54,7 @@ impl Dispatcher
     }
 
     /// Poll the dispatcher for work.
-    pub fn poll(&mut self) -> Option<workspace::build::Work> {
+    pub fn poll(&mut self) -> Option<ci::build::Work> {
         if self.running_jobs.is_empty() {
             if let Some(pending_job) = self.pending_jobs.pop_front() {
                 // We may need to move the next job onto the queue.
@@ -74,7 +74,7 @@ impl Dispatcher
                 vec![]
             };
 
-            let work = workspace::build::Work {
+            let work = ci::build::Work {
                 uuid: Uuid::new_v4(),
                 tasks: tasks.into_iter().collect(),
             };

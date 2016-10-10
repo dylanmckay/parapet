@@ -1,5 +1,5 @@
 use {Parapet, Error, PacketKind, job};
-use workspace;
+use ci;
 use comm::local;
 
 use std::{io, thread};
@@ -144,7 +144,7 @@ impl Interactive
 
     pub fn run_command(&mut self, executable: &str, arguments: &[String]) {
         if let local::Node::Connected { ref mut node, .. } = self.0.node {
-            let work = workspace::build::Work {
+            let work = ci::build::Work {
                 uuid: Uuid::new_v4(),
                 tasks: vec![job::Task {
                     uuid: Uuid::new_v4(),
