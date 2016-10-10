@@ -76,7 +76,7 @@ impl Node
         for work in completed_work {
             let response = PacketKind::WorkResponse(protocol::WorkResponse {
                 uuid: work.output.work.uuid,
-                tasks: work.output.task_results.into_iter().map(|a| protocol::job::TaskResult::from_task_result(&a)).collect(),
+                tasks: work.output.task_results.into_iter().map(|a| protocol::ci::TaskResult::from_task_result(&a)).collect(),
             });
 
             self.send_packet_to(&work.origin, &response)?;

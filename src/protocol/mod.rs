@@ -1,10 +1,10 @@
 pub use self::network::{Network, Node, Edge};
 pub use self::user_agent::UserAgent;
-pub use self::job::*;
+pub use self::ci::*;
 
 pub mod network;
 pub mod user_agent;
-pub mod job;
+pub mod ci;
 
 use network::Path;
 use uuid::Uuid;
