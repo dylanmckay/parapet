@@ -5,15 +5,20 @@ use uuid::Uuid;
 use std::collections::{HashMap, VecDeque};
 use std::sync::mpsc;
 
-pub mod running;
-
 pub struct Builder
 {
     tx: mpsc::Sender<ci::build::WorkOutput>,
     rx: mpsc::Receiver<ci::build::WorkOutput>,
 
-    running_work: HashMap<Uuid, running::Work>,
+    running_work: HashMap<Uuid, RunningWork>,
     completed_work: VecDeque<CompletedWork>,
+}
+
+pub struct RunningWork
+{
+    /// The UUID of the node that is requesting the work.
+    pub origin: Uuid,
+    pub work: ci::build::Work,
 }
 
 pub struct CompletedWork
@@ -39,7 +44,7 @@ impl Builder
     pub fn build(&mut self, origin: Uuid, work: ci::build::Work) {
         let tx = self.tx.clone();
 
-        let pending_work = running::Work { origin: origin, work: work.clone() };
+        let pending_work = RunningWork { origin: origin, work: work.clone() };
 
         self.running_work.insert(work.uuid, pending_work);
 
