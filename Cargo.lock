@@ -4,7 +4,6 @@ version = "0.1.1"
 dependencies = [
  "byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "dot 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "graphsearch 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "itertools 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "mio 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -55,11 +54,6 @@ dependencies = [
  "unicode-width 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "vec_map 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
-
-[[package]]
-name = "dot"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "either"
@@ -317,7 +311,6 @@ dependencies = [
 "checksum byteorder 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "0fc10e8cc6b2580fda3f36eb6dc5316657f812a3df879a44a66fc9f0fdbc4855"
 "checksum cfg-if 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "de1e760d7b6535af4241fca8bd8adf68e2e7edacc6b29f5d399050c5e48cf88c"
 "checksum clap 2.12.1 (registry+https://github.com/rust-lang/crates.io-index)" = "bbc90fa76af314f6e1d09fb3e739d145b25e0f8630a108ade30a3b58569b7b90"
-"checksum dot 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6bad61973e929901dfd6f78054501325546c979692543150055e77e52191a0eb"
 "checksum either 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5845bf77d497f79416df39462df26d4a8b71dd6440246848ee63709476dbb9a6"
 "checksum flate2 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)" = "3eeb481e957304178d2e782f2da1257f1434dfecbae883bafb61ada2a9fea3bb"
 "checksum gcc 0.3.35 (registry+https://github.com/rust-lang/crates.io-index)" = "91ecd03771effb0c968fd6950b37e89476a578aaf1c70297d8e92b6516ec3312"

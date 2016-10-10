@@ -11,7 +11,6 @@ extern crate slab;
 extern crate uuid;
 extern crate byteorder;
 extern crate graphsearch;
-extern crate dot;
 extern crate twox_hash;
 extern crate walkdir;
 #[macro_use]
