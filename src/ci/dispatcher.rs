@@ -48,6 +48,7 @@ impl Dispatcher
         }
     }
 
+    /// Adds a new job to the queue.
     pub fn enqueue(&mut self, job: Job) {
         self.pending_jobs.push_back(job);
     }
@@ -92,6 +93,7 @@ impl Dispatcher
         }
     }
 
+    /// Marks some work as completed.
     pub fn complete(&mut self, work: CompletedWork) {
         {
             let job_uuid = self.find_job_uuid_containing_work_uuid(&work.uuid).unwrap();
@@ -103,6 +105,11 @@ impl Dispatcher
         }
 
         self.move_finished_jobs();
+    }
+
+    /// Checks if the dispatcher has work ready.
+    pub fn has_work(&self) -> bool {
+        !self.pending_jobs.is_empty() || !self.running_jobs.is_empty()
     }
 
     pub fn completed_jobs(&mut self) -> impl Iterator<Item=CompletedJob> {

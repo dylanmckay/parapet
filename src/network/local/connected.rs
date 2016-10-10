@@ -64,6 +64,11 @@ impl Node
     pub fn tick(&mut self) -> Result<(), Error> {
         self.builder.tick();
 
+        if self.dispatcher.has_work() {
+            // FIXME: don't send this too often
+            self.broadcast_packet(&PacketKind::WorkAvailable(protocol::WorkAvailable))?;
+        }
+
         let completed_work: Vec<_> = self.builder.completed_work().collect();
         for work in completed_work {
             let response = PacketKind::WorkResponse(protocol::WorkResponse {

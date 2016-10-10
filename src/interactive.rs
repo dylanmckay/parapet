@@ -1,4 +1,4 @@
-use {Parapet, Error, PacketKind};
+use {Parapet, Error};
 use ci;
 use network::local;
 
@@ -6,7 +6,6 @@ use std::{io, thread};
 use std::sync::mpsc::channel;
 use std::io::Write;
 use std::sync::mpsc::TryRecvError;
-use protocol;
 
 use uuid::Uuid;
 
@@ -144,7 +143,7 @@ impl Interactive
 
     pub fn run_command(&mut self, executable: &str, arguments: &[String]) {
         if let local::Node::Connected { ref mut node, .. } = self.0.node {
-            let work = ci::Work {
+            let job = ci::Job {
                 uuid: Uuid::new_v4(),
                 tasks: vec![ci::Task {
                     uuid: Uuid::new_v4(),
@@ -155,7 +154,9 @@ impl Interactive
                 }].into_iter().collect(),
             };
 
-            node.broadcast_packet(&PacketKind::WorkRequest(protocol::WorkRequest::from_work(&work))).unwrap();
+            node.dispatcher.enqueue(job);
+
+            // node.broadcast_packet(&PacketKind::WorkRequest(protocol::WorkRequest::from_work(&work))).unwrap();
         } else {
             println!("not yet connected to network");
         }
