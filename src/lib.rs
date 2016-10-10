@@ -39,8 +39,6 @@ pub mod builder;
 pub mod dispatcher;
 pub mod workspace;
 
-pub mod graphviz;
-
 pub const SERVER_PORT: u16 = 53371;
 pub const SERVER_ADDRESS: (&'static str, u16) = ("127.0.0.1", SERVER_PORT);
 

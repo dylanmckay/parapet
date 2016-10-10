@@ -2,7 +2,7 @@ use {Parapet, Error, PacketKind, job};
 use workspace;
 use comm::local;
 
-use std::{io, fs, thread};
+use std::{io, thread};
 use std::sync::mpsc::channel;
 use std::io::Write;
 use std::sync::mpsc::TryRecvError;
@@ -40,10 +40,6 @@ pub enum Command
     Run {
         executable: String,
         arguments: Vec<String>
-    },
-
-    Plot {
-        filename: Option<String>,
     },
 }
 
@@ -83,10 +79,6 @@ impl Interactive
                             arguments: arguments[1..].iter().map(|s| s.to_string()).collect(),
                         })).unwrap();
                     },
-                    "plot" => {
-                        let filename = arguments.get(0).map(|s| s.to_string());
-                        tx.send(Message::Command(Command::Plot { filename: filename })).unwrap();
-                    },
                     _ => {
                         tx.send(Message::Command(Command::Unknown(command))).unwrap();
                         continue;
@@ -110,7 +102,6 @@ impl Interactive
                         Command::List => self.list(),
                         Command::Unknown(cmd) => println!("unknown command '{}'", cmd),
                         Command::Run { executable, arguments }=> self.run_command(&executable, &arguments),
-                        Command::Plot { filename } => self.plot(filename),
                     },
                 },
                 Err(TryRecvError::Empty) => (), // all good
@@ -167,17 +158,6 @@ impl Interactive
             node.broadcast_packet(&PacketKind::WorkRequest(protocol::WorkRequest::from_work(&work))).unwrap();
         } else {
             println!("not yet connected to network");
-        }
-    }
-
-    pub fn plot(&self, filename: Option<String>) {
-        use graphviz;
-
-        let filename = filename.unwrap_or("network.dot".to_string());
-
-        if let local::Node::Connected { ref node, .. } = self.0.node {
-            let mut file = fs::File::create(filename).unwrap();
-            graphviz::render_to(&node.network, &mut file);
         }
     }
 }
