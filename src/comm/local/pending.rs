@@ -1,4 +1,5 @@
-use {Packet, PacketKind, PendingState, Connection, Error};
+use {Packet, PacketKind, Connection, Error};
+use comm::PendingState;
 use {network, protocol};
 
 #[derive(Debug)]

@@ -1,4 +1,5 @@
-use {PendingState, Packet, PacketKind, Connection, Error};
+use {Packet, PacketKind, Connection, Error};
+use comm::PendingState;
 use network;
 use comm::local;
 use protocol;

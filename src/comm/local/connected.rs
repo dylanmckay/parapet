@@ -1,4 +1,5 @@
-use {Network, Packet, PacketKind, PendingState, Builder, Dispatcher, Error};
+use {Network, Packet, PacketKind, Builder, Dispatcher, Error};
+use comm::PendingState;
 use {network, protocol};
 use comm::remote;
 
