@@ -2,36 +2,44 @@ use ci;
 
 use uuid::Uuid;
 
+// A single command to execute.
 define_composite_type!(Task {
     uuid: Uuid,
     command: Command
 });
 
+// A list of tasks to complete.
 define_composite_type!(Work {
     uuid: Uuid,
     tasks: Vec<Task>
 });
 
-define_composite_type!(WorkResult {
-    uuid: Uuid,
-    task_results: Vec<TaskResult>
-});
-
+// A command to execute.
 define_composite_type!(Command {
     executable: String,
     arguments: Vec<String>
 });
 
+// The result for a single task.
 define_composite_type!(TaskResult {
     task: Task,
     output: Vec<u8>,
     result_code: i64
 });
 
+// Broadcasted by a node to tell everybody it has work available.
+define_packet!(WorkAvailable);
+
+// Broadcasted by a node to tell everybody it has ran out of work.
+define_packet!(WorkCompleted);
+
+// Sent by a node to another node asking for work.
 define_packet!(WorkRequest {
     work: Work
 });
 
+// Sent to from a node to another node, dishing out tasks for the
+// other node to complete.
 define_packet!(WorkResponse {
     uuid: Uuid,
     tasks: Vec<TaskResult>
