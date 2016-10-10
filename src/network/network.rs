@@ -1,4 +1,4 @@
-use network::{Connection, Path, Status};
+use network::{Node, Connection, Path, Status};
 use std::collections::{HashMap, VecDeque};
 
 use uuid::Uuid;
@@ -35,21 +35,6 @@ impl<'a> Entry<'a>
 
     pub fn get_mut(&mut self) -> &mut Node {
         self.network.nodes.get_mut(&self.uuid).unwrap()
-    }
-}
-
-#[derive(Debug)]
-pub struct Node
-{
-    pub uuid: Uuid,
-    pub connection: Option<Connection>,
-    pub status: Status,
-}
-
-impl Node
-{
-    pub fn has_work_available(&self) -> bool {
-        if let Status::Remote(ref s) = self.status { s.work_available } else { false }
     }
 }
 
