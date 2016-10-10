@@ -1,7 +1,6 @@
-use {Network, Packet, PacketKind, Builder, Dispatcher, Error};
-use network::PendingState;
-use {network, protocol};
-use network::remote;
+use {Network, Packet, PacketKind, Error};
+use network::{remote, PendingState};
+use {network, protocol, ci};
 
 use uuid::Uuid;
 use mio::tcp::*;
@@ -15,8 +14,8 @@ pub struct Node
     /// The network we are apart of.
     pub network: Network,
 
-    pub builder: Builder,
-    pub dispatcher: Dispatcher,
+    pub builder: ci::Builder,
+    pub dispatcher: ci::Dispatcher,
 }
 
 impl Node

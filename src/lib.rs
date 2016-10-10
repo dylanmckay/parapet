@@ -24,8 +24,6 @@ pub use self::network::Network;
 pub use self::error::Error;
 pub use self::protocol::{Packet, PacketKind};
 pub use self::job::Job;
-pub use self::builder::Builder;
-pub use self::dispatcher::Dispatcher;
 
 pub mod parapet;
 pub mod interactive;
@@ -33,8 +31,6 @@ pub mod network;
 pub mod error;
 pub mod protocol;
 pub mod job;
-pub mod builder;
-pub mod dispatcher;
 pub mod ci;
 
 pub const SERVER_PORT: u16 = 53371;

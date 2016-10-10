@@ -1,7 +1,6 @@
-use {Error, Builder, Dispatcher};
-use network::{PendingState, Connection};
-use network::{local, remote};
-use network;
+use Error;
+use network::{PendingState, Connection, local, remote};
+use {network, ci};
 
 use slab::Slab;
 use proto;
@@ -184,8 +183,8 @@ impl Node
                             uuid: join_response.your_uuid,
                             listener: listener,
                             network: network,
-                            builder: Builder::new(),
-                            dispatcher: Dispatcher::new(),
+                            builder: ci::Builder::new(),
+                            dispatcher: ci::Dispatcher::new(),
                         },
                         pending_connections: Slab::with_capacity(1024),
                     }

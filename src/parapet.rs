@@ -1,5 +1,5 @@
-use {Error, Network, Builder, Dispatcher};
-use network;
+use {Error, Network};
+use {network, ci};
 use network::Connection;
 
 use mio;
@@ -34,8 +34,8 @@ impl Parapet
                     uuid: uuid,
                     listener: Some(listener),
                     network: Network::new(uuid),
-                    builder: Builder::new(),
-                    dispatcher: Dispatcher::new(),
+                    builder: ci::Builder::new(),
+                    dispatcher: ci::Dispatcher::new(),
                 },
                 pending_connections: Slab::with_capacity(1024),
             },
