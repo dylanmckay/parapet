@@ -1,6 +1,6 @@
 use {Error, Builder, Dispatcher};
-use comm::{PendingState, Connection};
-use comm::{local, remote};
+use network::{PendingState, Connection};
+use network::{local, remote};
 use network;
 
 use slab::Slab;

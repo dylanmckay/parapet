@@ -1,6 +1,6 @@
 use {Packet, PacketKind};
 use ci;
-use comm::local;
+use network::local;
 
 pub fn packet(node: &mut local::connected::Node, packet: &Packet) {
     match packet.kind {

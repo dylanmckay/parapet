@@ -1,5 +1,5 @@
 use Error;
-use comm::local;
+use network::local;
 
 use mio;
 use mio::tcp::*;

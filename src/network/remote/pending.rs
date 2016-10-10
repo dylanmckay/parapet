@@ -1,7 +1,7 @@
 use {Packet, PacketKind, Error};
-use comm::{Connection, PendingState};
+use network::{Connection, PendingState};
 use network;
-use comm::local;
+use network::local;
 use protocol;
 
 use uuid::Uuid;

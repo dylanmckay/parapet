@@ -1,7 +1,7 @@
 use {Network, Packet, PacketKind, Builder, Dispatcher, Error};
-use comm::PendingState;
+use network::PendingState;
 use {network, protocol};
-use comm::remote;
+use network::remote;
 
 use uuid::Uuid;
 use mio::tcp::*;

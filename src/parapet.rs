@@ -1,6 +1,6 @@
 use {Error, Network, Builder, Dispatcher};
-use comm::Connection;
-use comm;
+use network;
+use network::Connection;
 
 use mio;
 use mio::tcp::*;
@@ -12,7 +12,7 @@ use proto;
 
 pub struct Parapet
 {
-    pub node: comm::local::Node,
+    pub node: network::local::Node,
     pub poll: mio::Poll,
 }
 
@@ -23,14 +23,14 @@ impl Parapet
         where A: std::net::ToSocketAddrs {
         let mut poll = mio::Poll::new()?;
 
-        let listener = comm::local::tcp::bind(&mut poll, addr)?;
+        let listener = network::local::tcp::bind(&mut poll, addr)?;
         let uuid = Uuid::new_v4();
 
         println!("assigning UUID {}", uuid);
 
         Ok(Parapet {
-            node: comm::local::Node::Connected {
-                node: comm::local::connected::Node {
+            node: network::local::Node::Connected {
+                node: network::local::connected::Node {
                     uuid: uuid,
                     listener: Some(listener),
                     network: Network::new(uuid),
@@ -53,16 +53,16 @@ impl Parapet
         let stream = TcpStream::connect(&address)?;
 
         let poll = mio::Poll::new()?;
-        poll.register(&stream, comm::local::node::NEW_CONNECTION_TOKEN, mio::Ready::writable() | mio::Ready::readable(),
+        poll.register(&stream, network::local::node::NEW_CONNECTION_TOKEN, mio::Ready::writable() | mio::Ready::readable(),
             mio::PollOpt::edge())?;
 
         let connection = Connection {
-            token: comm::local::node::NEW_CONNECTION_TOKEN,
+            token: network::local::node::NEW_CONNECTION_TOKEN,
             protocol: proto::wire::stream::Connection::new(stream, proto::wire::middleware::pipeline::default()),
         };
 
         Ok(Parapet {
-            node: comm::local::Node::Pending(comm::local::pending::Node::new(connection)),
+            node: network::local::Node::Pending(network::local::pending::Node::new(connection)),
             poll: poll,
         })
     }

@@ -27,7 +27,6 @@ pub use self::job::Job;
 pub use self::builder::Builder;
 pub use self::dispatcher::Dispatcher;
 
-pub mod comm;
 pub mod parapet;
 pub mod interactive;
 pub mod network;

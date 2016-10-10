@@ -1,6 +1,6 @@
 use {Parapet, Error, PacketKind, job};
 use ci;
-use comm::local;
+use network::local;
 
 use std::{io, thread};
 use std::sync::mpsc::channel;
