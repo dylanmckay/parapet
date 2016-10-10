@@ -1,5 +1,5 @@
-use {Error, Connection, Builder, Dispatcher};
-use comm::PendingState;
+use {Error, Builder, Dispatcher};
+use comm::{PendingState, Connection};
 use comm::{local, remote};
 use network;
 

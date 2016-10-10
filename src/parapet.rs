@@ -1,4 +1,5 @@
-use {Error, Network, Connection, Builder, Dispatcher};
+use {Error, Network, Builder, Dispatcher};
+use comm::Connection;
 use comm;
 
 use mio;

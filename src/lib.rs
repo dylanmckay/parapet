@@ -20,7 +20,6 @@ extern crate itertools;
 
 pub use self::parapet::Parapet;
 pub use self::interactive::Interactive;
-pub use self::connection::Connection;
 pub use self::network::Network;
 pub use self::error::Error;
 pub use self::protocol::{Packet, PacketKind};
@@ -32,7 +31,6 @@ pub use self::workspace::Sandbox;
 pub mod comm;
 pub mod parapet;
 pub mod interactive;
-pub mod connection;
 pub mod network;
 pub mod error;
 pub mod protocol;

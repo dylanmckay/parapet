@@ -2,7 +2,7 @@ pub use self::path::Path;
 
 pub mod path;
 
-use Connection;
+use comm::Connection;
 use std::collections::{HashMap, VecDeque};
 
 use uuid::Uuid;
