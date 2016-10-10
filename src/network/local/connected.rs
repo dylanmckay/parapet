@@ -72,9 +72,19 @@ impl Node
             self.broadcast_packet(&packet)?;
         }
 
+        // If we're feeling up to it, grab some work from other nodes.
+        if self.builder.should_pickup_work() {
+            let node_uuid = self.network.nodes().filter(|n| n.has_work_available()).next().map(|n| n.uuid.clone());
+
+            if let Some(node_uuid) = node_uuid {
+                println!("asking for more work");
+                self.send_packet_to(&node_uuid, &PacketKind::WorkRequest(protocol::WorkRequest))?;
+            }
+        }
+
         let completed_work: Vec<_> = self.builder.completed_work().collect();
         for work in completed_work {
-            let response = PacketKind::WorkResponse(protocol::WorkResponse {
+            let response = PacketKind::WorkFinished(protocol::WorkFinished {
                 uuid: work.output.work.uuid,
                 tasks: work.output.task_results.into_iter().map(|a| protocol::ci::TaskResult::from_task_result(&a)).collect(),
             });

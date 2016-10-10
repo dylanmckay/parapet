@@ -46,6 +46,13 @@ pub struct Node
     pub status: Status,
 }
 
+impl Node
+{
+    pub fn has_work_available(&self) -> bool {
+        if let Status::Remote(ref s) = self.status { s.work_available } else { false }
+    }
+}
+
 /// An edge betweeb two nodes.
 ///
 /// Node `a` is always the smaller UUID, and node `b` is

@@ -8,28 +8,28 @@ use std::collections::VecDeque;
 use uuid::Uuid;
 
 /// A piece of work dished out.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Work
 {
     pub uuid: Uuid,
     pub tasks: VecDeque<Task>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WorkOutput
 {
     pub work: Work,
     pub task_results: Vec<TaskResult>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TaskResult
 {
     pub task: Task,
     pub output: TaskOutput,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TaskOutput
 {
     pub output: Vec<u8>,

@@ -11,31 +11,31 @@ pub struct Dispatcher
     completed_jobs: VecDeque<CompletedJob>,
 }
 
-pub struct RunningJob
+struct RunningJob
 {
     job: Job,
     pending_tasks: VecDeque<Task>,
     running_work: HashMap<Uuid, RunningWork>,
-    completed_tasks: VecDeque<ci::build::TaskResult>,
+    completed_tasks: Vec<ci::build::TaskResult>,
 }
 
 pub struct CompletedJob
 {
     pub job: Job,
-    pub task_results: VecDeque<ci::build::TaskResult>,
+    pub task_results: Vec<ci::build::TaskResult>,
 }
 
-pub struct RunningWork
+struct RunningWork
 {
     uuid: Uuid,
     running_tasks: HashMap<Uuid, Task>,
-    completed_tasks: VecDeque<ci::build::TaskResult>,
+    completed_tasks: Vec<ci::build::TaskResult>,
 }
 
 pub struct CompletedWork
 {
     pub uuid: Uuid,
-    pub task_results: VecDeque<ci::build::TaskResult>,
+    pub task_results: Vec<ci::build::TaskResult>,
 }
 
 impl Dispatcher
@@ -55,19 +55,20 @@ impl Dispatcher
 
     /// Poll the dispatcher for work.
     pub fn poll(&mut self) -> Option<ci::build::Work> {
-        if self.running_jobs.is_empty() {
+        // Push a pending job if running jobs have no work.
+        if !self.running_jobs.iter().any(|job| job.has_pending_tasks()) {
             if let Some(pending_job) = self.pending_jobs.pop_front() {
                 // We may need to move the next job onto the queue.
                 self.running_jobs.push_back(RunningJob {
                     pending_tasks: pending_job.tasks.iter().cloned().collect(),
                     running_work: HashMap::new(),
-                    completed_tasks: VecDeque::new(),
+                    completed_tasks: Vec::new(),
                     job: pending_job,
                 });
             }
         }
 
-        if let Some(running_job) = self.running_jobs.front_mut() {
+        if let Some(running_job) = self.running_jobs.iter_mut().find(|job| job.has_pending_tasks()) {
             let tasks = if let Some(pending_task) = running_job.pending_tasks.pop_front() {
                 vec![pending_task]
             } else {
@@ -82,7 +83,7 @@ impl Dispatcher
             let running_work = RunningWork {
                 uuid: work.uuid.clone(),
                 running_tasks: work.tasks.iter().map(|t| (t.uuid.clone(), t.clone())).collect(),
-                completed_tasks: VecDeque::new(),
+                completed_tasks: Vec::new(),
             };
 
             running_job.running_work.insert(running_work.uuid.clone(), running_work);
@@ -144,6 +145,119 @@ impl RunningJob
 {
     pub fn is_complete(&self) -> bool {
         self.pending_tasks.is_empty() && self.running_work.is_empty()
+    }
+
+    pub fn has_pending_tasks(&self) -> bool {
+        !self.pending_tasks.is_empty()
+    }
+}
+
+#[cfg(test)]
+mod test
+{
+    pub use super::*;
+    pub use ci::job::*;
+    pub use ci::build::*;
+    pub use uuid::Uuid;
+
+    describe! dispatcher {
+        before_each {
+            let task1 = Task {
+                uuid: Uuid::new_v4(),
+                command: Command {
+                    executable: "echo".to_owned(),
+                    arguments: vec!["foo".to_owned(), "bar".to_owned()],
+                },
+            };
+
+            let task2 = Task {
+                uuid: Uuid::new_v4(),
+                command: Command {
+                    executable: "cat".to_owned(),
+                    arguments: vec!["/etc/hosts".to_owned()],
+                },
+            };
+
+            let job1 = Job {
+                uuid: Uuid::new_v4(),
+                tasks: vec![task1.clone()],
+            };
+
+            let job2 = Job {
+                uuid: Uuid::new_v4(),
+                tasks: vec![task2.clone()],
+            };
+
+            let mut dispatcher = Dispatcher::new();
+            dispatcher.enqueue(job1.clone());
+            assert_eq!(dispatcher.pending_jobs.len(), 1);
+            dispatcher.enqueue(job2.clone());
+            assert_eq!(dispatcher.pending_jobs.len(), 2);
+        }
+
+        describe! enqueue {
+            it "correctly adds jobs" {
+                assert_eq!(dispatcher.pending_jobs.len(), 2);
+                dispatcher.enqueue(job1);
+                assert_eq!(dispatcher.pending_jobs.len(), 3);
+            }
+        }
+
+        describe! poll {
+            it "polls work in the correct order" {
+                assert_eq!(dispatcher.poll().unwrap().tasks[0], task1);
+                assert_eq!(dispatcher.poll().unwrap().tasks[0], task2);
+                assert_eq!(dispatcher.poll(), None);
+                assert_eq!(dispatcher.poll(), None);
+            }
+        }
+
+        describe! complete {
+            it "works as expected" {
+                assert!(dispatcher.has_work());
+
+                assert_eq!(dispatcher.running_jobs.len(), 0);
+                let work = dispatcher.poll().unwrap();
+                assert_eq!(dispatcher.running_jobs.len(), 1);
+
+                dispatcher.complete(CompletedWork {
+                    uuid: work.uuid,
+                    task_results: work.tasks.into_iter().map(|task| {
+                        TaskResult {
+                            task: task,
+                            output: TaskOutput {
+                                output: Vec::new(),
+                                result_code: 0,
+                            },
+                        }
+                    }).collect(),
+                });
+
+                assert_eq!(dispatcher.running_jobs.len(), 0);
+                assert!(dispatcher.has_work());
+
+                let work = dispatcher.poll().unwrap();
+                assert_eq!(dispatcher.running_jobs.len(), 1);
+                assert_eq!(dispatcher.pending_jobs.len(), 0);
+
+                dispatcher.complete(CompletedWork {
+                    uuid: work.uuid,
+                    task_results: work.tasks.into_iter().map(|task| {
+                        TaskResult {
+                            task: task,
+                            output: TaskOutput {
+                                output: Vec::new(),
+                                result_code: 0,
+                            },
+                        }
+                    }).collect(),
+                });
+
+                assert_eq!(dispatcher.running_jobs.len(), 0);
+                assert_eq!(dispatcher.pending_jobs.len(), 0);
+                assert!(!dispatcher.has_work());
+            }
+        }
     }
 }
 

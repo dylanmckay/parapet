@@ -124,7 +124,7 @@ impl Node
 
                             // Check if the packet is for us.
                             if packet.is_recipient(&node.uuid) {
-                                local::handle::packet(node, &packet);
+                                local::handle::packet(node, &packet)?;
                             } else {
                                 // we need to forward this packet to the recipient
                                 let next_hop_uuid = packet.path.next_hop(&node.uuid).unwrap();

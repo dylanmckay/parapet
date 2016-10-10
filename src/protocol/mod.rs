@@ -51,7 +51,8 @@ define_packet_kind!(PacketKind: u32 {
     0x35 => WorkAvailable,
     0x36 => WorkComplete,
     0x40 => WorkRequest,
-    0x41 => WorkResponse
+    0x41 => WorkResponse,
+    0x42 => WorkFinished
 });
 
 impl Packet

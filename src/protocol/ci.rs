@@ -34,21 +34,25 @@ define_packet!(WorkAvailable);
 define_packet!(WorkComplete);
 
 // Sent by a node to another node asking for work.
-define_packet!(WorkRequest {
-    work: Work
-});
+define_packet!(WorkRequest);
 
 // Sent to from a node to another node, dishing out tasks for the
 // other node to complete.
 define_packet!(WorkResponse {
+    work: Work
+});
+
+// Sent from a node to a node indicating that it has finished
+// executing a piece of work.
+define_packet!(WorkFinished {
     uuid: Uuid,
     tasks: Vec<TaskResult>
 });
 
-impl WorkRequest
+impl WorkResponse
 {
     pub fn from_work(work: &ci::build::Work) -> Self {
-        WorkRequest {
+        WorkResponse {
             work: Work {
                 uuid: work.uuid.clone(),
                 tasks: work.tasks.iter().map(|task| Task::from_task(task)).collect(),
@@ -88,7 +92,7 @@ impl Command
     }
 }
 
-impl Into<ci::build::Work> for WorkRequest
+impl Into<ci::build::Work> for WorkResponse
 {
     fn into(self) -> ci::build::Work {
         ci::build::Work {
@@ -104,6 +108,19 @@ impl Into<ci::job::Task> for Task
         ci::job::Task {
             uuid: self.uuid,
             command: self.command.into(),
+        }
+    }
+}
+
+impl Into<ci::build::TaskResult> for TaskResult
+{
+    fn into(self) -> ci::build::TaskResult {
+        ci::build::TaskResult {
+            task: self.task.into(),
+            output: ci::build::TaskOutput {
+                output: self.output,
+                result_code: self.result_code,
+            },
         }
     }
 }
