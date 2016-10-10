@@ -34,6 +34,7 @@ impl Parapet
                     uuid: uuid,
                     listener: Some(listener),
                     network: Network::new(uuid),
+                    notify: network::Notify::new(),
                     builder: ci::Builder::new(),
                     dispatcher: ci::Dispatcher::new(),
                 },

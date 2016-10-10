@@ -183,6 +183,7 @@ impl Node
                             uuid: join_response.your_uuid,
                             listener: listener,
                             network: network,
+                            notify: network::Notify::new(),
                             builder: ci::Builder::new(),
                             dispatcher: ci::Dispatcher::new(),
                         },

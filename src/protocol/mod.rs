@@ -49,7 +49,7 @@ define_packet_kind!(PacketKind: u32 {
     0x10 => JoinRequest,
     0x11 => JoinResponse,
     0x35 => WorkAvailable,
-    0x36 => WorkCompleted,
+    0x36 => WorkComplete,
     0x40 => WorkRequest,
     0x41 => WorkResponse
 });

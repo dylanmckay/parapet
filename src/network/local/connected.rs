@@ -1,5 +1,5 @@
 use {Network, Packet, PacketKind, Error};
-use network::{remote, PendingState};
+use network::{remote, PendingState, Notify};
 use {network, protocol, ci};
 
 use uuid::Uuid;
@@ -14,6 +14,7 @@ pub struct Node
     /// The network we are apart of.
     pub network: Network,
 
+    pub notify: Notify,
     pub builder: ci::Builder,
     pub dispatcher: ci::Dispatcher,
 }
@@ -64,9 +65,10 @@ impl Node
     pub fn tick(&mut self) -> Result<(), Error> {
         self.builder.tick();
 
-        if self.dispatcher.has_work() {
-            // FIXME: don't send this too often
-            self.broadcast_packet(&PacketKind::WorkAvailable(protocol::WorkAvailable))?;
+        if self.dispatcher.has_work() { self.notify.work.available() } else { self.notify.work.complete() }
+
+        for packet in self.notify.notify() {
+            self.broadcast_packet(&packet)?;
         }
 
         let completed_work: Vec<_> = self.builder.completed_work().collect();

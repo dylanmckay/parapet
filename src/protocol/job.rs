@@ -31,7 +31,7 @@ define_composite_type!(TaskResult {
 define_packet!(WorkAvailable);
 
 // Broadcasted by a node to tell everybody it has ran out of work.
-define_packet!(WorkCompleted);
+define_packet!(WorkComplete);
 
 // Sent by a node to another node asking for work.
 define_packet!(WorkRequest {
