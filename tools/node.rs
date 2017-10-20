@@ -13,7 +13,7 @@ fn main() {
 
     let matches = App::new("parapet")
         // .version("1.0")
-        .author("Dylan <dylanmckay34@gmail.com>")
+        .author("Dylan <me@dylanmckay.io>")
         .about("Peer-to-peer build system")
         .after_help(DESCRIPTION)
         .arg(Arg::with_name("address")
