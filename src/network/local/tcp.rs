@@ -2,7 +2,7 @@ use Error;
 use network::local;
 
 use mio;
-use mio::tcp::*;
+use mio::net::*;
 use std;
 
 /// Create a new tcp listener locally.

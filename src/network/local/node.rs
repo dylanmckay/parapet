@@ -5,6 +5,7 @@ use {network, ci};
 use slab::Slab;
 use proto;
 use mio;
+use mio::unix::UnixReady;
 use std;
 
 use std::time::Duration;
@@ -43,6 +44,8 @@ impl Node
         }
 
         for event in events.iter() {
+            let readiness = UnixReady::from(event.readiness());
+
             match event.token() {
                 // A pending connection.
                 SERVER_TOKEN => {
@@ -74,25 +77,25 @@ impl Node
                         local::Node::Pending(ref mut pending_node) => {
                             assert_eq!(token, NEW_CONNECTION_TOKEN);
 
-                            if event.kind().is_hup() {
+                            if readiness.is_hup() {
                                 println!("remote node disconnected before we could join");
                                 return Ok(());
-                            } else if !event.kind().is_readable() {
+                            } else if !readiness.is_readable() {
                                 continue;
                             }
 
                             pending_node.process_incoming_data()?;
                         },
                         local::Node::Connected { ref mut node, ref mut pending_connections } => {
-                            if !event.kind().is_readable() {
+                            if !readiness.is_readable() {
                                 continue;
                             }
 
                             let packet = if let Some(mut pending_connection) = pending_connections.entry(token) {
-                                if event.kind().is_hup() {
+                                if readiness.is_hup() {
                                     println!("pending remote connection disconnected");
                                     pending_connection.remove();
-                                } else if event.kind().is_readable() {
+                                } else if readiness.is_readable() {
                                     pending_connection.get_mut().process_incoming_data(node)?;
 
                                     if pending_connection.get().is_complete() {
@@ -104,12 +107,12 @@ impl Node
                             } else if let Some(mut from_node) = node.network.entry_by_token(token) {
                                 // we received a packet from an established node
 
-                                if event.kind().is_hup() {
+                                if readiness.is_hup() {
                                     println!("node {} disconnected", from_node.get().uuid);
                                     from_node.remove();
 
                                     continue;
-                                } else if event.kind().is_readable() {
+                                } else if readiness.is_readable() {
                                     if let Some(packet) = from_node.get_mut().connection.as_mut().unwrap().receive_packet()? {
                                         packet
                                     } else {

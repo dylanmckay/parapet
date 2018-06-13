@@ -3,7 +3,7 @@ use network::{remote, PendingState, Notify};
 use {network, protocol, ci};
 
 use uuid::Uuid;
-use mio::tcp::*;
+use mio::net::*;
 
 /// A local node that is connected to the network.
 pub struct Node

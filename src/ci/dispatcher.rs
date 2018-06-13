@@ -98,7 +98,7 @@ impl Dispatcher
     pub fn complete(&mut self, work: CompletedWork) {
         {
             let job_uuid = self.find_job_uuid_containing_work_uuid(&work.uuid).unwrap();
-            let mut running_job = self.running_jobs.iter_mut().find(|job| job.job.uuid == job_uuid).unwrap();
+            let running_job = self.running_jobs.iter_mut().find(|job| job.job.uuid == job_uuid).unwrap();
             let mut running_work = running_job.running_work.remove(&work.uuid).unwrap();
 
             running_work.completed_tasks.extend(work.task_results);

@@ -21,7 +21,7 @@ pub struct Entry<'a>
 
 impl<'a> Entry<'a>
 {
-    pub fn remove(mut self) -> Node {
+    pub fn remove(self) -> Node {
         self.network.edges = self.network.edges.iter().cloned().filter(|edge| {
             !edge.connected_to(&self.uuid)
         }).collect();

@@ -3,7 +3,7 @@ use {network, ci};
 use network::Connection;
 
 use mio;
-use mio::tcp::*;
+use mio::net::*;
 use slab::Slab;
 use uuid::Uuid;
 

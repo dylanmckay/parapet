@@ -3,7 +3,7 @@ use network;
 use protocol;
 
 use proto;
-use mio::tcp::*;
+use mio::net::*;
 
 #[derive(Debug)]
 pub struct Connection
