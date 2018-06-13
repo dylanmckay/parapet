@@ -1,9 +1,3 @@
-#![feature(question_mark)]
-#![feature(associated_consts)]
-#![feature(const_fn)]
-#![feature(conservative_impl_trait)]
-#![feature(plugin)]
-
 #![cfg_attr(test, plugin(stainless))]
 
 extern crate mio;
