@@ -69,35 +69,38 @@ mod test
     pub use uuid::Uuid;
     pub use network::Path;
 
-    describe! path {
-        describe! next_hop {
-            before_each {
-                let node1 = Uuid::parse_str("123e4567-e89b-12d3-a456-426655440000").unwrap();
-                let node2 = Uuid::parse_str("2c6bb858-72ea-4db6-a9ab-6ec0ca1f18ab").unwrap();
-                let node3 = Uuid::parse_str("3042be80-4d2b-4cce-b30c-3142e3035720").unwrap();
+    fn setup() -> (Path, Uuid, Uuid, Uuid) {
+        let node1 = Uuid::parse_str("123e4567-e89b-12d3-a456-426655440000").unwrap();
+        let node2 = Uuid::parse_str("2c6bb858-72ea-4db6-a9ab-6ec0ca1f18ab").unwrap();
+        let node3 = Uuid::parse_str("3042be80-4d2b-4cce-b30c-3142e3035720").unwrap();
 
-                let mut path_queue = VecDeque::new();
-                path_queue.push_front(node1.clone());
-                path_queue.push_front(node2.clone());
-                path_queue.push_front(node3.clone());
+        let mut path_queue = VecDeque::new();
+        path_queue.push_front(node1.clone());
+        path_queue.push_front(node2.clone());
+        path_queue.push_front(node3.clone());
 
-                let path = Path::new(path_queue);
-            }
+        let path = Path::new(path_queue);
+        (path, node1, node2, node3)
+    }
 
-            it "recognizes the second hop" {
-                assert_eq!(path.next_hop(&node1).unwrap(), node2);
-            }
+    #[test]
+    fn path_next_hop_recognizes_the_second_hop() {
+        let (path, node1, node2, _) = setup();
+        assert_eq!(path.next_hop(&node1).unwrap(), node2);
+    }
 
-            it "recognizes the third hop" {
-                assert_eq!(path.next_hop(&node2).unwrap(), node3);
-            }
+    #[test]
+    fn path_next_hop_recognizes_the_third_hop() {
+        let (path, _, node2, node3) = setup();
+        assert_eq!(path.next_hop(&node2).unwrap(), node3);
+    }
 
-            it "returns None when the given UUID is not in the path" {
-                let invalid_uuid = Uuid::parse_str("883c3194-6750-4bbb-8f38-b2b05fc8a40e").unwrap();
+    #[test]
+    fn path_next_hop_returns_none_when_unknown_uuid() {
+        let (path, _, _, _) = setup();
+        let invalid_uuid = Uuid::parse_str("883c3194-6750-4bbb-8f38-b2b05fc8a40e").unwrap();
 
-                assert_eq!(path.next_hop(&invalid_uuid), None);
-            }
-        }
+        assert_eq!(path.next_hop(&invalid_uuid), None);
     }
 }
 

@@ -1,5 +1,3 @@
-#![cfg_attr(test, plugin(stainless))]
-
 extern crate mio;
 extern crate slab;
 extern crate uuid;

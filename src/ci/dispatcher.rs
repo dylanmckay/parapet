@@ -160,104 +160,107 @@ mod test
     pub use ci::build::*;
     pub use uuid::Uuid;
 
-    describe! dispatcher {
-        before_each {
-            let task1 = Task {
-                uuid: Uuid::new_v4(),
-                command: Command {
-                    executable: "echo".to_owned(),
-                    arguments: vec!["foo".to_owned(), "bar".to_owned()],
-                },
-            };
+    fn setup() -> (Dispatcher, Job, Job, Task, Task) {
+        let task1 = Task {
+            uuid: Uuid::new_v4(),
+            command: Command {
+                executable: "echo".to_owned(),
+                arguments: vec!["foo".to_owned(), "bar".to_owned()],
+            },
+        };
 
-            let task2 = Task {
-                uuid: Uuid::new_v4(),
-                command: Command {
-                    executable: "cat".to_owned(),
-                    arguments: vec!["/etc/hosts".to_owned()],
-                },
-            };
+        let task2 = Task {
+            uuid: Uuid::new_v4(),
+            command: Command {
+                executable: "cat".to_owned(),
+                arguments: vec!["/etc/hosts".to_owned()],
+            },
+        };
 
-            let job1 = Job {
-                uuid: Uuid::new_v4(),
-                tasks: vec![task1.clone()],
-            };
+        let job1 = Job {
+            uuid: Uuid::new_v4(),
+            tasks: vec![task1.clone()],
+        };
 
-            let job2 = Job {
-                uuid: Uuid::new_v4(),
-                tasks: vec![task2.clone()],
-            };
+        let job2 = Job {
+            uuid: Uuid::new_v4(),
+            tasks: vec![task2.clone()],
+        };
 
-            let mut dispatcher = Dispatcher::new();
-            dispatcher.enqueue(job1.clone());
-            assert_eq!(dispatcher.pending_jobs.len(), 1);
-            dispatcher.enqueue(job2.clone());
-            assert_eq!(dispatcher.pending_jobs.len(), 2);
-        }
+        let mut dispatcher = Dispatcher::new();
+        dispatcher.enqueue(job1.clone());
+        assert_eq!(dispatcher.pending_jobs.len(), 1);
+        dispatcher.enqueue(job2.clone());
+        assert_eq!(dispatcher.pending_jobs.len(), 2);
 
-        describe! enqueue {
-            it "correctly adds jobs" {
-                assert_eq!(dispatcher.pending_jobs.len(), 2);
-                dispatcher.enqueue(job1);
-                assert_eq!(dispatcher.pending_jobs.len(), 3);
-            }
-        }
+        (dispatcher, job1, job2, task1, task2)
+    }
 
-        describe! poll {
-            it "polls work in the correct order" {
-                assert_eq!(dispatcher.poll().unwrap().tasks[0], task1);
-                assert_eq!(dispatcher.poll().unwrap().tasks[0], task2);
-                assert_eq!(dispatcher.poll(), None);
-                assert_eq!(dispatcher.poll(), None);
-            }
-        }
+    #[test]
+    fn enqueue_correctly_adds_jobs() {
+        let (mut dispatcher, job1, _, _, _) = setup();
 
-        describe! complete {
-            it "works as expected" {
-                assert!(dispatcher.has_work());
+        assert_eq!(dispatcher.pending_jobs.len(), 2);
+        dispatcher.enqueue(job1);
+        assert_eq!(dispatcher.pending_jobs.len(), 3);
+    }
 
-                assert_eq!(dispatcher.running_jobs.len(), 0);
-                let work = dispatcher.poll().unwrap();
-                assert_eq!(dispatcher.running_jobs.len(), 1);
+    #[test]
+    fn poll_works_in_correct_order() {
+        let (mut dispatcher, _, _, task1, task2) = setup();
 
-                dispatcher.complete(CompletedWork {
-                    uuid: work.uuid,
-                    task_results: work.tasks.into_iter().map(|task| {
-                        TaskResult {
-                            task: task,
-                            output: TaskOutput {
-                                output: Vec::new(),
-                                result_code: 0,
-                            },
-                        }
-                    }).collect(),
-                });
+        assert_eq!(dispatcher.poll().unwrap().tasks[0], task1);
+        assert_eq!(dispatcher.poll().unwrap().tasks[0], task2);
+        assert_eq!(dispatcher.poll(), None);
+        assert_eq!(dispatcher.poll(), None);
+    }
 
-                assert_eq!(dispatcher.running_jobs.len(), 0);
-                assert!(dispatcher.has_work());
+    #[test]
+    fn complete_works_as_expected() {
+        let (mut dispatcher, _, _, _, _) = setup();
 
-                let work = dispatcher.poll().unwrap();
-                assert_eq!(dispatcher.running_jobs.len(), 1);
-                assert_eq!(dispatcher.pending_jobs.len(), 0);
+        assert!(dispatcher.has_work());
 
-                dispatcher.complete(CompletedWork {
-                    uuid: work.uuid,
-                    task_results: work.tasks.into_iter().map(|task| {
-                        TaskResult {
-                            task: task,
-                            output: TaskOutput {
-                                output: Vec::new(),
-                                result_code: 0,
-                            },
-                        }
-                    }).collect(),
-                });
+        assert_eq!(dispatcher.running_jobs.len(), 0);
+        let work = dispatcher.poll().unwrap();
+        assert_eq!(dispatcher.running_jobs.len(), 1);
 
-                assert_eq!(dispatcher.running_jobs.len(), 0);
-                assert_eq!(dispatcher.pending_jobs.len(), 0);
-                assert!(!dispatcher.has_work());
-            }
-        }
+        dispatcher.complete(CompletedWork {
+            uuid: work.uuid,
+            task_results: work.tasks.into_iter().map(|task| {
+                TaskResult {
+                    task: task,
+                    output: TaskOutput {
+                        output: Vec::new(),
+                        result_code: 0,
+                    },
+                }
+            }).collect(),
+        });
+
+        assert_eq!(dispatcher.running_jobs.len(), 0);
+        assert!(dispatcher.has_work());
+
+        let work = dispatcher.poll().unwrap();
+        assert_eq!(dispatcher.running_jobs.len(), 1);
+        assert_eq!(dispatcher.pending_jobs.len(), 0);
+
+        dispatcher.complete(CompletedWork {
+            uuid: work.uuid,
+            task_results: work.tasks.into_iter().map(|task| {
+                TaskResult {
+                    task: task,
+                    output: TaskOutput {
+                        output: Vec::new(),
+                        result_code: 0,
+                    },
+                }
+            }).collect(),
+        });
+
+        assert_eq!(dispatcher.running_jobs.len(), 0);
+        assert_eq!(dispatcher.pending_jobs.len(), 0);
+        assert!(!dispatcher.has_work());
     }
 }
 
