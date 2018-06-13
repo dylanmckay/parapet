@@ -10,14 +10,14 @@ repository = "https://github.com/dylanmckay/parapet"
 [dependencies]
 mio = "0.6"
 slab = "0.3"
-uuid = { version = "0.3", features = ["v4", "serde"] }
-byteorder = "0.5"
+uuid = { version = "0.6", features = ["v4", "serde"] }
+byteorder = "1.2"
 graphsearch = "0.6"
-protocol = { version = "0.1.10", features = ["uuid"] }
-clap = "2.11"
-twox-hash = "1.0.0"
-walkdir = "0.1.8"
-itertools = "0.5.2"
+protocol = { version = "0.3", features = ["uuid"] }
+clap = "2.31"
+twox-hash = "1.1.0"
+walkdir = "2.1"
+itertools = "0.7"
 
 [dev-dependencies]
 stainless = "*"
